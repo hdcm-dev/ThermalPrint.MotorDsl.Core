@@ -33,6 +33,9 @@ public partial class MainPage : ContentPage
             ("Acta de Infracción", MultaDsl.Template, (Func<Dictionary<string, object>>)MultaDsl.GetSampleData),
             ("Ticket Simple de Multa", TicketSimpleDsl.Template, (Func<Dictionary<string, object>>)TicketSimpleDsl.GetSampleData),
             ("Comprobante de Pago", ComprobanteDsl.Template, (Func<Dictionary<string, object>>)ComprobanteDsl.GetSampleData),
+            // Prueba de carga sobre hardware real: 200 infracciones en un acta. Ver
+            // MultaDsl.GetCargaData para qué está medido fuera de la impresora y qué no.
+            ("Acta de 200 infracciones (carga)", MultaDsl.Template, (Func<Dictionary<string, object>>)(() => MultaDsl.GetCargaData(200))),
         };
     }
 

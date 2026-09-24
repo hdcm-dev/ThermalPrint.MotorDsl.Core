@@ -225,4 +225,43 @@ public static class MultaDsl
         ["logoMunicipio"]   = LogoBase64,
         ["firmaInspector"] = FirmaBase64
     };
+
+    /// <summary>
+    /// Acta de carga: la misma plantilla con <paramref name="cantidad"/> infracciones en el loop.
+    /// Existe para contestar una pregunta concreta sobre hardware real: si el acta larga
+    /// **sale entera** o se corta en el camino.
+    ///
+    /// Lo que ya está medido fuera de la impresora, sobre 200 infracciones:
+    ///   - el motor rinde las 200 sin errores ni avisos, por los targets `text` y `escpos`;
+    ///   - el ESC/POS son 22 057 bytes y el troceado del transporte los parte en 87 bloques
+    ///     de 256 B que reensamblan idénticos, sin tope total;
+    ///   - son 831 líneas de 32 columnas: entre 2,8 y 3,5 metros de rollo.
+    ///
+    /// Lo que sólo se puede ver en la impresora: si aguanta los 87 bloques con un sondeo
+    /// `DLE EOT` por bloque sin romper el socket, y si el papel alcanza.
+    /// </summary>
+    public static Dictionary<string, object> GetCargaData(int cantidad = 200)
+    {
+        var data = GetSampleData();
+
+        var infracciones = new List<Dictionary<string, object>>(cantidad);
+        long total = 0;
+        for (int i = 1; i <= cantidad; i++)
+        {
+            int monto = 1000 * i;
+            total += monto;
+            infracciones.Add(new Dictionary<string, object>
+            {
+                ["articulo"]    = $"{i} inc. {i % 9 + 1}",
+                ["descripcion"] = $"INFRACCION-{i:D3} de prueba de carga del acta",
+                ["puntos"]      = (i % 5 + 1).ToString(),
+                ["monto"]       = monto.ToString()
+            });
+        }
+
+        data["nroActa"]    = $"CARGA-{cantidad}";
+        data["infracciones"] = infracciones;
+        data["totalMonto"] = total.ToString();
+        return data;
+    }
 }
