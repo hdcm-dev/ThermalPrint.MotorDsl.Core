@@ -8,6 +8,25 @@ versión de los paquetes se inyecta en build/pack vía `-p:PackageVersion` /
 `-p:MotorDslVersion` (ver `docs/09_devops/estrategia-versionado_v1.0.md`), por lo
 que el número de versión **no** vive en los `.csproj`.
 
+## [Unreleased]
+
+### Añadido
+
+- **`scripts/local-devcontainer/`**: versión Linux de `scripts/local/`. Compila los cinco
+  samples a APK dentro de un **contenedor Docker efímero** (.NET 10 + workload `maui-android` +
+  JDK 17 + SDK de Android, imagen `motordsl-android-build:net10`), así que el host solo necesita
+  Docker. Cada `run-<Sample>.sh` deja el APK en `scripts/local-devcontainer/OUTPUTs/<Sample>.apk`
+  y, si hay un teléfono, lo instala y lo lanza; `run-All.sh` y `update-packages.sh` equivalen a
+  sus `.bat`, y `limpiar.sh` borra lo que persiste.
+
+  El contenedor se borra al terminar (`--rm` y un `trap` para Ctrl+C) y compila una **copia**
+  del repo, de modo que el árbol no recibe `bin/` ni `obj/`. Persisten solo la imagen y un volumen
+  con la caché de NuGet y un keystore de firma estable: sin él, cada contenedor firmaría con una
+  clave nueva y `adb install -r` fallaría sobre la versión anterior.
+
+  Si otro contenedor ya tiene el teléfono tomado con su adb, el script instala a través de él,
+  porque dos servidores de adb no pueden compartir el USB. `--url` reescribe `backendBaseUrl`
+  solo en la copia, sin tocar el `motordsl-config.json` del árbol.
 
 ## [1.0.17] - 2026-08-27
 

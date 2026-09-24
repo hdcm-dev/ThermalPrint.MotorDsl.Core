@@ -247,6 +247,7 @@ PrintThermal_Motor_Maui/
 ├── docs/                                  Documentación funcional, técnica, sprints, ejemplos
 ├── scripts/
 │   ├── local/                            Scripts dotnet build local
+│   ├── local-devcontainer/               Ídem desde Linux, en contenedor efímero (APKs en OUTPUTs/)
 │   ├── mobile/                           Publicación APK Android
 │   └── nuget/                            Publicación a nuget.org
 └── nupkg/                                 .nupkg generados (gitignored)
@@ -288,7 +289,14 @@ dotnet build src/MotorDsl.Maui/MotorDsl.Maui.csproj -c Debug
 dotnet build -t:Run -f net10.0-android samples/MotorDsl.Nuget.Integrated.MultaApp/MotorDsl.Nuget.Integrated.MultaApp.csproj
 ```
 
+Desde Linux sin instalar el SDK de Android, solo con Docker:
+
+```bash
+scripts/local-devcontainer/run-MotorDsl.Nuget.Integrated.MultaApp.sh
+```
+
 Más detalles en
+[`scripts/local-devcontainer/Readme.md`](https://github.com/Aplicada-Streaming/PrintThermal_Motor_Maui/blob/main/scripts/local-devcontainer/Readme.md),
 [`scripts/local/Readme.md`](https://github.com/Aplicada-Streaming/PrintThermal_Motor_Maui/blob/main/scripts/local/Readme.md)
 y en
 [`scripts/mobile/Readme.md`](https://github.com/Aplicada-Streaming/PrintThermal_Motor_Maui/blob/main/scripts/mobile/Readme.md).
