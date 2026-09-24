@@ -86,12 +86,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\MotorDsl.Core\MotorDsl.Core.csproj" />
-		<ProjectReference Include="..\..\src\MotorDsl.Parser\MotorDsl.Parser.csproj" />
-		<ProjectReference Include="..\..\src\MotorDsl.Rendering\MotorDsl.Rendering.csproj" />
-		<ProjectReference Include="..\..\src\MotorDsl.Extensions\MotorDsl.Extensions.csproj" />
-	</ItemGroup>
-
+		<PackageReference Include="MotorDsl.Core" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Parser" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Rendering" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Extensions" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Printing.Abstractions" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Bluetooth" Version="1.0.17" />
+		<PackageReference Include="MotorDsl.Maui" Version="1.0.17" />
+	<ItemGroup>
+	
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />

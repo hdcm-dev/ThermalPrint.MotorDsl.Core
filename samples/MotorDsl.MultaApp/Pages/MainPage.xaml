@@ -54,6 +54,7 @@
                             <x:String>Acta de Infracción</x:String>
                             <x:String>Ticket Simple de Multa</x:String>
                             <x:String>Comprobante de Pago</x:String>
+                            <x:String>Acta de 200 infracciones (carga)</x:String>
                         </Picker.Items>
                     </Picker>
                     <Label Grid.Column="1" Text="▼" FontSize="16" TextColor="#666666"

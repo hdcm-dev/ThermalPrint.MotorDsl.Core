@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'samples/MotorDsl.MultaApp.Nuget/**'
-      - '!**.md'
-      - '!**/*.gitignore'
-      - '!**/*.gitattributes'
+    # paths:
+    #  - 'samples/MotorDsl.MultaApp.Nuget/**'
+    #  - '!**.md'
+    #  - '!**/*.gitignore'
+    #  - '!**/*.gitattributes'
+    
   workflow_call:
 
 env:
