@@ -14,7 +14,7 @@ env:
 jobs:
   build-android:
     # runs-on: ubuntu-latest
-    runs-on: [self-hosted, i7infra-dev]
+    runs-on: [self-hosted, ci-hdcm]
     strategy:
       matrix:
         app:
