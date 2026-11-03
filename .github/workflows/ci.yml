@@ -15,7 +15,7 @@ env:
 jobs:
   test:
     # runs-on: ubuntu-latest
-    runs-on: [self-hosted, i7infra-dev]
+    runs-on: [self-hosted, ci-hdcm]
     name: MotorDsl.Tests
 
     steps:

@@ -28,7 +28,7 @@ jobs:
   # evitar NU1605 (downgrade de dependencia) en apps que mezclen varios.
   version:
     # runs-on: ubuntu-latest
-    runs-on: [self-hosted, i7infra-dev]
+    runs-on: [self-hosted, ci-hdcm]
     outputs:
       package_version: ${{ steps.resolve.outputs.package_version }}
     steps:
@@ -50,7 +50,7 @@ jobs:
   pack-managed:
     needs: version
     # runs-on: ubuntu-latest
-    runs-on: [self-hosted, i7infra-dev]
+    runs-on: [self-hosted, ci-hdcm]
     permissions:
       contents: read
     env:
@@ -158,7 +158,7 @@ jobs:
   publish:
     needs: [version, pack-managed, pack-platform]
     # runs-on: ubuntu-latest
-    runs-on: [self-hosted, i7infra-dev]
+    runs-on: [self-hosted, ci-hdcm]
     permissions:
       contents: read
     env:
