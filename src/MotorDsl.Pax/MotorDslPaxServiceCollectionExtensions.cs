@@ -27,6 +27,15 @@ public static class MotorDslPaxServiceCollectionExtensions
     internal static IPaxPrinterDevice CreateDevice(PaxPrinterOptions options) => options.Mode switch
     {
         PaxPrinterMode.Simulated => new SimulatedPaxPrinterDevice(options),
-        _ => options.RealDeviceFactory?.Invoke(options) ?? new UnavailablePaxPrinterDevice()
+        _ => options.RealDeviceFactory?.Invoke(options) ?? DefaultRealDevice()
     };
+
+    // Con el binding embebido (MOTORDSL_PAX_NEPTUNE) el modo Real usa NeptuneLite; sin el (paquete
+    // armado sin SDK, o MotorDsl.Tests que enlaza estas fuentes) cae en Unavailable -> Connection.
+    private static IPaxPrinterDevice DefaultRealDevice() =>
+#if MOTORDSL_PAX_NEPTUNE
+        new Neptune.NeptunePaxPrinterDevice();
+#else
+        new UnavailablePaxPrinterDevice();
+#endif
 }

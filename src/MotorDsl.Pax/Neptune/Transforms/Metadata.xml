@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Recorte del binding NeptuneLite 4.15.00 a lo que usa la impresora: com.pax.dal (IDAL, IPrinter),
+  entity, exceptions y com.pax.neptunelite.api. memorycard y pedkeyisolation se conservan porque
+  IDAL/IIcc los devuelven: quitarlos invalida IDAL entero (BG8503) y NeptuneLiteUser.GetDal no se genera. El resto no se genera en C# (las clases siguen en el
+  jar y R8 las conserva por NeptuneProguardRules.pro).
+-->
+<metadata>
+  <remove-node path="/api/package[@name='com.pax.dal.proxy']" />
+  <remove-node path="/api/package[@name='com.pax.dal.utils']" />
+  <remove-node path="/api/package[@name='com.pax.nep.security.interceptor']" />
+</metadata>
