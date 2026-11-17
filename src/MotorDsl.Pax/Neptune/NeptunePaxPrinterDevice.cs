@@ -69,7 +69,13 @@ public sealed class NeptunePaxPrinterDevice : IPaxPrinterDevice
             bitmap = BitmapFactory.DecodeByteArray(png, 0, png.Length)
                 ?? throw new PrinterProtocolException("El PNG no se pudo decodificar a Android.Graphics.Bitmap");
             try { printer.Print(bitmap, new Listener(tcs)); }
-            catch (Java.Lang.Throwable t) { throw Translate(t, opening: false); }
+            catch (Java.Lang.Throwable t)
+            {
+                // print() fallo sincronicamente: el SDK no retiene el bitmap, se libera ya.
+                bitmap.Recycle();
+                bitmap = null;
+                throw Translate(t, opening: false);
+            }
         }, ct).ConfigureAwait(false);
 
         try
