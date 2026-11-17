@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0-android</TargetFramework>
+
+		<RootNamespace>MotorDsl.Pax</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+
+		<!--
+		Solo net10.0-android: la impresora interna del PAX A910S se maneja con el SDK NeptuneLite
+		(binding en la unidad U2). El transporte, el mapeo de errores, el simulador y el perfil se
+		escriben SIN tipos Android y MotorDsl.Tests (net10.0) los enlaza por fuente, igual que
+		BluetoothPrinterTransport.Chunking.cs.
+		-->
+
+		<PackageId>MotorDsl.Pax</PackageId>
+		<Authors>Fernando Rafael Filipuzzi</Authors>
+		<Description>Transport de impresion para la impresora interna del PAX A910S (Android, SDK NeptuneLite) para MotorDsl. Envia el PNG de raster-preview; incluye impresora simulada.</Description>
+		<PackageTags>maui;thermal;dsl;printing;pax;a910s;neptunelite</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/Aplicada-Streaming/PrintThermal_Motor_Maui</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AndroidLdFlags>-Wl,-z,max-page-size=16384</AndroidLdFlags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MotorDsl.Printing.Abstractions\MotorDsl.Printing.Abstractions.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+	</ItemGroup>
+
+</Project>

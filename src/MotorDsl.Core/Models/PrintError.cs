@@ -43,6 +43,7 @@ public class PrintError
         {
             PrinterHardwareException => PrintErrorType.Hardware,
             PrintNotConfirmedException => PrintErrorType.Protocol,
+            PrinterProtocolException => PrintErrorType.Protocol,
             System.IO.IOException => PrintErrorType.Connection,
             System.Net.Sockets.SocketException => PrintErrorType.Connection,
             TimeoutException => PrintErrorType.Timeout,

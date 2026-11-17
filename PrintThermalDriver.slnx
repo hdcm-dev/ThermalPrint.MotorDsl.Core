@@ -30,6 +30,7 @@
     <Project Path="src/MotorDsl.Extensions/MotorDsl.Extensions.csproj" />
     <Project Path="src/MotorDsl.Maui/MotorDsl.Maui.csproj" />
     <Project Path="src/MotorDsl.Network/MotorDsl.Network.csproj" />
+    <Project Path="src/MotorDsl.Pax/MotorDsl.Pax.csproj" />
     <Project Path="src/MotorDsl.Parser/MotorDsl.Parser.csproj" />
     <Project Path="src/MotorDsl.Printing.Abstractions/MotorDsl.Printing.Abstractions.csproj" />
     <Project Path="src/MotorDsl.Rendering/MotorDsl.Rendering.csproj" />
