@@ -28,10 +28,14 @@ public class EscPosRenderer : IRenderer
             var result = new RenderResult("escpos");
             var buffer = new List<byte>();
 
+            // Tabla de caracteres del perfil (PC437 por defecto): ESC t y la codificación del
+            // texto salen de la misma página. Ver EscPosTextEncoding.
+            var textEncoding = EscPosTextEncoding.For(profile);
+
             // Initialize printer
             buffer.AddRange(EscPosCommands.Init);
-            // Seleccionar codepage PC437
-            buffer.AddRange(new byte[] { 0x1B, 0x74, 0x00 });
+            // Seleccionar la tabla (ESC t n)
+            buffer.AddRange(textEncoding.SelectCommand);
 
             if (document?.Root != null)
             {
@@ -91,8 +95,8 @@ public class EscPosRenderer : IRenderer
                     if (isBold)
                         buffer.AddRange(EscPosCommands.StyleBold);
 
-                    // Emit text bytes with CP437 encoding
-                    buffer.AddRange(EncodeText(layoutInfo.WrappedText ?? ""));
+                    // Texto codificado con la página de la tabla seleccionada
+                    buffer.AddRange(textEncoding.Encode(layoutInfo.WrappedText));
 
                     // Bold off after bold line
                     if (isBold)
@@ -119,14 +123,6 @@ public class EscPosRenderer : IRenderer
             result.Output = Array.Empty<byte>();
             return result;
         }
-    }
-
-    private static byte[] EncodeText(string text)
-    {
-        // CP437 es el codepage IBM original que soporta caracteres españoles en posiciones correctas
-        var encoding = System.Text.CodePagesEncodingProvider.Instance.GetEncoding(437)
-                       ?? System.Text.Encoding.ASCII;
-        return encoding.GetBytes(text);
     }
 
     private static byte[] GetAlignmentCommand(string? alignment) => alignment?.ToLower() switch
