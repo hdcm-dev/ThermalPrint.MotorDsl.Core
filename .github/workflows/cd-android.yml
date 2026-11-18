@@ -39,8 +39,14 @@ jobs:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'microsoft'
 
+    # .NET en un directorio propio del job: la imagen ubuntu-latest (26.04) trae preinstalado el
+    # SDK 11 en /usr/share/dotnet, y con los manifiestos de las dos bandas juntos el
+    # `workload install` corta con "Workload pack 'Microsoft.NET.Runtime.Emscripten.Node.net10'
+    # ... conflicts with manifest 'microsoft.net.workload.emscripten.current'".
     - name: Setup .NET ${{ env.DOTNET_VERSION }}
       uses: actions/setup-dotnet@v4
+      env:
+        DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
