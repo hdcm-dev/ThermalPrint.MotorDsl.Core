@@ -1,4 +1,4 @@
 ﻿{
-    "_comment":  "URL base del backend SGR. El script publish-mobile.bat de host-windows-prod la reescribe antes de compilar el APK para que apunte a la IP del host destino. En dev local (USB + adb reverse) se deja localhost:5000.",
-    "backendBaseUrl":  "http://190.188.36.33:5000"
+    "_comment":  "URL base del backend. El script de publicación del host destino la reescribe antes de compilar el APK para que apunte a la IP de ese host. En dev local (USB + adb reverse) se deja localhost:5000.",
+    "backendBaseUrl":  "http://203.0.113.50:5000"
 }

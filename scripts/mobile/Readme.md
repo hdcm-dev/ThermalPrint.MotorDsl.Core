@@ -38,7 +38,7 @@ El script soporta un argumento opcional con la URL del backend, que se aplica
 patcheando `Resources/Raw/motordsl-config.json`:
 
 ```bat
-publish-MotorDsl.MultaApp-apk.bat http://192.168.0.10:5000
+publish-MotorDsl.MultaApp-apk.bat http://{host-de-pruebas}:5000
 ```
 
 Cuando termina, queda el APK firmado en

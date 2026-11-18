@@ -36,7 +36,7 @@ Internos (no se llaman a mano): `run-sample.sh` (lo que hacen los `run-*.sh`),
 cd scripts/local-devcontainer
 ./run-MotorDsl.Nuget.Integrated.MultaApp.sh            # APK + instalar + lanzar
 ./run-MotorDsl.MultaApp.sh --sin-instalar              # solo el APK
-./run-MotorDsl.MultaApp.sh --url http://192.168.0.10:5000
+./run-MotorDsl.MultaApp.sh --url http://{host-de-pruebas}:5000
 ./run-All.sh --sin-instalar                            # los cinco APK
 ```
 
@@ -70,7 +70,7 @@ adb install -r OUTPUTs/MotorDsl.SampleApp.apk
 Dos servidores de adb no pueden tomar el mismo USB. Por eso:
 
 - Si **otro contenedor ya corre un servidor de adb** (por ejemplo
-  `gda-core-app-dev`), el script lo detecta y instala **a través de él**
+  `<app>-dev`), el script lo detecta y instala **a través de él**
   (`docker cp` del APK + `adb install` ahí adentro; después borra lo copiado).
 - Si no, levanta un segundo contenedor efímero, privilegiado y con
   `/dev/bus/usb` montado, cuyo adb corre como root (la ACL del nodo USB no

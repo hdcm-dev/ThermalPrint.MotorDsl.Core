@@ -5,7 +5,7 @@ REM  MotorDsl.SampleApp -- Genera bundle APK de MotorDsl.SampleApp (Release)
 REM
 REM  Uso:
 REM    scripts\mobil\publish-sampleapp-apk.bat
-REM    scripts\mobil\publish-sampleapp-apk.bat http://192.168.0.10:5000
+REM    scripts\mobil\publish-sampleapp-apk.bat http://{host-de-pruebas}:5000
 REM
 REM  Si se pasa una URL como argumento, se patchea
 REM  Resources/Raw/motordsl-config.json (backendBaseUrl) antes de
