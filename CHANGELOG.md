@@ -52,6 +52,15 @@ que el número de versión **no** vive en los `.csproj`.
   del self-hosted, cuya cola compartida demoraba la CI de un PR hasta 1 h 36 min. Los workflows
   de iOS y `pack-platform` siguen en `macos-15`.
 
+### Seguridad
+
+- **Datos de infraestructura fuera de la punta pública**: el `backendBaseUrl` de los cinco
+  `motordsl-config.json` de `samples/` pasa a `http://203.0.113.50:5000` (rango de documentación,
+  RFC 5737); cada instalación fija la suya con `--url` (`scripts/local-devcontainer/`) o con el
+  argumento de los `.bat` de `scripts/mobile/`. Los ejemplos de esos scripts usan
+  `{host-de-pruebas}` en lugar de la IP de la LAN de desarrollo, y las citas a la app consumidora
+  privada pasan a `<app>`. Sólo cambia el contenido de la punta: la historia no se reescribe.
+
 ## [1.0.17] - 2026-08-27
 
 ### Cambiado
@@ -110,8 +119,8 @@ que el número de versión **no** vive en los `.csproj`.
   defecto **NO reintenta**: el documento pudo imprimirse parcialmente y reimprimir solo gastaría
   rollo y podría duplicar un comprobante. La decisión de reimprimir queda en el operador.
 
-> Diagnóstico, mediciones y evidencia en el repositorio de documentación de `GDA.Core.APP`:
-> `PROMPTs/Fixs/13-Impresion-Logo/` (§10.7 barrera, §10.8 y §10.9 cola del ticket).
+> Diagnóstico, mediciones y evidencia en el repositorio de documentación de la app consumidora
+> (`<app>`, privado): `PROMPTs/Fixs/13-Impresion-Logo/` (§10.7 barrera, §10.8 y §10.9 cola del ticket).
 
 ## [1.0.16] - 2026-08-26
 
@@ -175,7 +184,7 @@ que el número de versión **no** vive en los `.csproj`.
   status, no política.
 
 > Diagnóstico completo, capturas y evidencia en el repositorio de documentación de
-> `GDA.Core.APP`: `PROMPTs/Fixs/13-Impresion-Logo/`.
+> la app consumidora (`<app>`, privado): `PROMPTs/Fixs/13-Impresion-Logo/`.
 
 ## [1.0.15] - 2026-08-26
 

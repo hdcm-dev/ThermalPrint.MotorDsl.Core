@@ -12,7 +12,7 @@
 #                   en la COPIA que compila el contenedor; el árbol no se toca.
 #
 # Dos servidores de adb no pueden reclamar el mismo USB. Si otro contenedor ya
-# corre uno (p. ej. gda-core-app-dev), se instala a través de él; si no, se
+# corre uno (p. ej. <app>-dev), se instala a través de él; si no, se
 # levanta un contenedor efímero con adb propio. ADB_CONTENEDOR=<nombre> fuerza
 # uno en particular; ADB_CONTENEDOR=ninguno fuerza el adb propio.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"

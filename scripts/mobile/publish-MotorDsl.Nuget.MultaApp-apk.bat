@@ -5,7 +5,7 @@ REM  MotorDsl.Nuget.MultaApp -- Genera bundle APK de MotorDsl.Nuget.MultaApp (Re
 REM
 REM  Uso:
 REM    scripts\mobile\publish-MotorDsl.Nuget.MultaApp-apk.bat
-REM    scripts\mobile\publish-MotorDsl.Nuget.MultaApp-apk.bat http://192.168.0.10:5000
+REM    scripts\mobile\publish-MotorDsl.Nuget.MultaApp-apk.bat http://{host-de-pruebas}:5000
 REM
 REM  Si se pasa una URL como argumento, se patchea
 REM  Resources/Raw/motordsl-config.json (backendBaseUrl) antes de
