@@ -40,7 +40,25 @@
 		<Compile Include="..\MotorDsl.Pax\*.cs" Link="Linked\Pax\%(Filename)%(Extension)" />
 	</ItemGroup>
 
+	<!--
+		Renderers SkiaSharp de MotorDsl.Maui (raster-preview, el PNG que recibe el PAX, y escpos-bitmap).
+		MotorDsl.Maui solo targetea net10.0-android/net10.0-ios; estos archivos no usan tipos MAUI, asi
+		que se enlazan por fuente con la fuente embebida que usa el renderer en el equipo. El acta
+		integrada del sample se enlaza para renderizarla a 384 px como en la impresora.
+	-->
 	<ItemGroup>
+		<Compile Include="..\MotorDsl.Maui\Renderers\RasterPreviewRenderer.cs" Link="Linked\Maui\RasterPreviewRenderer.cs" />
+		<Compile Include="..\MotorDsl.Maui\Renderers\BitmapEscPosRenderer.cs" Link="Linked\Maui\BitmapEscPosRenderer.cs" />
+		<Compile Include="..\MotorDsl.Maui\Renderers\SkiaSharpRasterizer.cs" Link="Linked\Maui\SkiaSharpRasterizer.cs" />
+		<Compile Include="..\MotorDsl.Maui\Renderers\QrCodeRasterizer.cs" Link="Linked\Maui\QrCodeRasterizer.cs" />
+		<EmbeddedResource Include="..\MotorDsl.Maui\Resources\Fonts\DroidSans-Regular.ttf" Link="Linked\Maui\DroidSans-Regular.ttf" />
+		<Compile Include="..\..\samples\MotorDsl.Integrated.MultaApp\Templates\MultaIntegratedDsl.cs" Link="Linked\Samples\MultaIntegratedDsl.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SkiaSharp" Version="3.119.2" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.2" />
+		<PackageReference Include="QRCoder" Version="1.8.0" />
 		<PackageReference Include="coverlet.collector" Version="6.0.4" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
