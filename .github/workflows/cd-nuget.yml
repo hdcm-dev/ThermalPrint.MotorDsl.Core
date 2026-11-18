@@ -1,13 +1,19 @@
 name: CD NuGet - Publish MotorDsl
 
-# Publica los 8 paquetes de la libreria.
+# Publica los 9 paquetes de la libreria.
 #
 # Por que hay dos jobs de pack y no uno solo: `dotnet pack` de un proyecto multi-TFM exige
 # compilar TODOS sus TFM. MotorDsl.Bluetooth y MotorDsl.Maui declaran net10.0-android;net10.0-ios,
 # y el workload `ios` NO EXISTE para Linux — `dotnet workload install ios` responde
 # "Workload ID ios isn't supported on this platform" y el build corta con NETSDK1178. Por eso
 # esos dos paquetes solo pueden empaquetarse en macOS, mientras que los otros seis son net10.0
-# puro y salen del runner self-hosted, que es gratis y mas rapido.
+# puro y salen del runner self-hosted, que es gratis y mas rapido. MotorDsl.Pax (net10.0-android)
+# va tambien en macOS porque ese runner ya instala la workload android; no esta verificado que
+# i7infra-dev la tenga.
+#
+# MotorDsl.Pax sale SIN el binding NeptuneLite: el jar y las .so del SDK PAX no se versionan
+# (no hay licencia de redistribucion), asi que el csproj compila con PaxNeptune=false y el modo
+# Real cae en Connection. Se fuerza -p:PaxNeptune=false para que no dependa de la deteccion.
 
 on:
   push:
@@ -23,8 +29,8 @@ env:
   DOTNET_VERSION: '10.0.102'
 
 jobs:
-  # ── Version unica para los 8 paquetes ────────────────────────────────────────
-  # Se resuelve una sola vez y se propaga por outputs. Los 8 comparten numero para
+  # ── Version unica para los 9 paquetes ────────────────────────────────────────
+  # Se resuelve una sola vez y se propaga por outputs. Los 9 comparten numero para
   # evitar NU1605 (downgrade de dependencia) en apps que mezclen varios.
   version:
     # runs-on: ubuntu-latest
@@ -101,7 +107,7 @@ jobs:
           path: ./nupkg/*.nupkg
           retention-days: 1
 
-  # ── Los 2 paquetes con TFM de plataforma ─────────────────────────────────────
+  # ── Los 3 paquetes con TFM de plataforma ─────────────────────────────────────
   # Requiere macOS: es la unica plataforma donde conviven los workloads ios y android.
   pack-platform:
     needs: version
@@ -125,22 +131,23 @@ jobs:
 
       - name: Restore
         run: |
-          for proj in Bluetooth Maui; do
+          for proj in Bluetooth Maui Pax; do
             dotnet restore src/MotorDsl.$proj/MotorDsl.$proj.csproj
           done
 
       - name: Build Release
         run: |
-          for proj in Bluetooth Maui; do
-            dotnet build src/MotorDsl.$proj/MotorDsl.$proj.csproj -c Release --no-restore
+          for proj in Bluetooth Maui Pax; do
+            dotnet build src/MotorDsl.$proj/MotorDsl.$proj.csproj -c Release --no-restore -p:PaxNeptune=false
           done
 
-      - name: Pack los 2 proyectos multi-TFM
+      - name: Pack los 3 proyectos de plataforma
         run: |
-          for proj in Bluetooth Maui; do
+          for proj in Bluetooth Maui Pax; do
             dotnet pack src/MotorDsl.$proj/MotorDsl.$proj.csproj \
               -c Release \
               --no-build \
+              -p:PaxNeptune=false \
               -p:PackageVersion=${{ env.PACKAGE_VERSION }} \
               -p:PackageReleaseNotes="Release ${{ env.PACKAGE_VERSION }}" \
               -o ./nupkg
@@ -177,12 +184,12 @@ jobs:
           merge-multiple: true
           path: ./nupkg
 
-      - name: Verificar que estén los 8
+      - name: Verificar que estén los 9
         run: |
           ls -la ./nupkg/
           COUNT=$(ls -1 ./nupkg/*.nupkg | wc -l)
-          if [ "$COUNT" -ne 8 ]; then
-            echo "::error::Se esperaban 8 paquetes y hay $COUNT. No se publica un conjunto incompleto."
+          if [ "$COUNT" -ne 9 ]; then
+            echo "::error::Se esperaban 9 paquetes y hay $COUNT. No se publica un conjunto incompleto."
             exit 1
           fi
 
@@ -190,7 +197,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         run: |
           # Orden de dependencias: Printing.Abstractions primero, los consumidores despues.
-          for proj in Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui; do
+          for proj in Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax; do
             dotnet nuget push "./nupkg/MotorDsl.$proj.${{ env.PACKAGE_VERSION }}.nupkg" \
               --api-key ${{ secrets.NUGET_API_KEY }} \
               --source https://api.nuget.org/v3/index.json \

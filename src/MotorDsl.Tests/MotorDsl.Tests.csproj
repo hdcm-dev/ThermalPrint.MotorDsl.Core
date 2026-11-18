@@ -32,6 +32,14 @@
 		<Compile Include="..\MotorDsl.Bluetooth\BluetoothPrinterTransport.Capabilities.cs" Link="Linked\BluetoothPrinterTransport.Capabilities.cs" />
 	</ItemGroup>
 
+	<!--
+		MotorDsl.Pax solo targetea net10.0-android; su parte pura (transport, mapeo, simulador,
+		perfil, DI) se escribe sin tipos Android y se enlaza por fuente, con el mismo criterio.
+	-->
+	<ItemGroup>
+		<Compile Include="..\MotorDsl.Pax\*.cs" Link="Linked\Pax\%(Filename)%(Extension)" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="coverlet.collector" Version="6.0.4" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />

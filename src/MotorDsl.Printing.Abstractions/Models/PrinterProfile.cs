@@ -60,4 +60,26 @@ public class PrinterProfile
         CutDelayMs = 500,
         InitCommandDelayMs = 300
     };
+
+    /// <summary>
+    /// Impresora interna del PAX A910S (transport "pax", SDK NeptuneLite). Las demoras de pacing
+    /// son de Bluetooth y no aplican: el documento viaja como un unico bitmap. La confirmacion por
+    /// GS I tampoco aplica (la da el listener del SDK), por eso <see cref="ConfirmPrintTimeoutMs"/>
+    /// es 0; <see cref="WriteTimeoutMs"/> acota la espera de ese listener. Valores Inferidos,
+    /// pendientes de medir en el equipo (feature 04, D2).
+    /// </summary>
+    public static PrinterProfile PaxA910S => new()
+    {
+        Name = "pax_a910s",
+        LineDelayMs = 0,
+        ByteDelayMs = 0,
+        InitDelayMs = 0,
+        FinalDelayMs = 0,
+        QrDelayMs = 0,
+        ImageDelayMs = 0,
+        CutDelayMs = 0,
+        InitCommandDelayMs = 0,
+        WriteTimeoutMs = 60_000,
+        ConfirmPrintTimeoutMs = 0
+    };
 }
