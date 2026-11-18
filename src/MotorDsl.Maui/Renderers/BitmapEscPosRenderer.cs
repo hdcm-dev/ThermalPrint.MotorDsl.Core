@@ -9,6 +9,9 @@ namespace MotorDsl.Maui.Renderers;
 /// Renderer ESC/POS extendido con soporte de imágenes bitmap rasterizadas.
 /// Para nodos con is_bitmap=true, usa IBitmapRasterizer → GS v 0.
 /// Para el resto, delega al EscPosRenderer base.
+/// El texto se codifica con la misma tabla que EscPosRenderer (PC437 por defecto, configurable en
+/// el perfil): ver <see cref="EscPosTextEncoding"/>. <c>ESC t</c> se emite sólo si algún texto
+/// lleva caracteres fuera de ASCII, de modo que un ticket ASCII sale byte a byte como antes.
 /// Sprint 08 | TK-64
 /// </summary>
 public class BitmapEscPosRenderer : IRenderer
@@ -37,7 +40,16 @@ public class BitmapEscPosRenderer : IRenderer
                 var entries = document.NodeLayoutInfo
                     .Where(kvp => !string.IsNullOrEmpty(kvp.Value.WrappedText))
                     .OrderBy(kvp => kvp.Value.LineNumber)
-                    .ThenBy(kvp => kvp.Value.ColumnNumber);
+                    .ThenBy(kvp => kvp.Value.ColumnNumber)
+                    .ToList();
+
+                // Tabla de caracteres: la misma página para ESC t y para codificar el texto. Las
+                // vocales con acento, la ñ, ° ¿ ¡ salían como «?» porque el texto iba en ASCII.
+                // ESC t sólo hace falta si se va a mandar un byte >= 0x80: el ASCII es igual en
+                // todas las tablas, y así un ticket ASCII no cambia.
+                var textEncoding = EscPosTextEncoding.For(profile);
+                if (entries.Any(kvp => IsText(kvp.Value) && !EscPosTextEncoding.IsAscii(kvp.Value.WrappedText)))
+                    buffer.AddRange(textEncoding.SelectCommand);
 
                 foreach (var kvp in entries)
                 {
@@ -105,7 +117,7 @@ public class BitmapEscPosRenderer : IRenderer
                     bool isBold = layoutInfo.DeviceMetadata.TryGetValue("bold", out var bv) && bv is true;
                     if (isBold) buffer.AddRange(EscPosCommands.StyleBold);
 
-                    buffer.AddRange(Encoding.ASCII.GetBytes(layoutInfo.WrappedText));
+                    buffer.AddRange(textEncoding.Encode(layoutInfo.WrappedText));
 
                     if (isBold) buffer.AddRange(EscPosCommands.StyleNormal);
 
@@ -130,6 +142,12 @@ public class BitmapEscPosRenderer : IRenderer
             return result;
         }
     }
+
+    /// <summary>True si la entrada se emite como texto (no es bitmap, QR ni código de barras).</summary>
+    private static bool IsText(LayoutInfo info) =>
+        !(info.DeviceMetadata.TryGetValue("is_bitmap", out var b) && b is true) &&
+        !(info.DeviceMetadata.TryGetValue("is_qr", out var q) && q is true) &&
+        !(info.DeviceMetadata.TryGetValue("is_barcode", out var c) && c is true);
 
     /// <summary>
     /// GS v 0 — Print raster bit image.

@@ -52,6 +52,27 @@ profile58HB6.SetCapability("bitmap_command", "GS_v_0");
 | ú        | 0xA3 |
 | ñ        | 0xA4 |
 | Ñ        | 0xA5 |
+| É        | 0x90 |
+| °        | 0xF8 |
+| ¿        | 0xA8 |
+| ¡        | 0xAD |
+
+PC437 **no tiene Á, Í, Ó, Ú**: la codificación las degrada a la letra sin acento (Á → A), no a «?».
+
+### Tabla de caracteres en los renderers
+
+`escpos` y `escpos-bitmap` codifican el texto con la misma tabla, resuelta en
+`EscPosTextEncoding` a partir del `DeviceProfile`:
+
+- Sin `CodePage`: PC437 y `ESC t 0`, la tabla del self-test de este modelo.
+- Con `CodePage` distinto de 437, el perfil tiene que traer su `CodePageCommand` (`ESC t n`): el
+  número `n` lo fija cada fabricante, así que se toma del self-test del equipo. Sin comando, el
+  render devuelve un error en lugar de imprimir caracteres de otra tabla.
+- `escpos` emite `ESC t` siempre tras el `ESC @`; `escpos-bitmap` sólo si algún texto lleva
+  caracteres fuera de ASCII, de modo que un ticket ASCII sale igual que antes.
+
+El self-test de la 58HB6-6101 sólo documenta PC437; que acepte PC850 o PC858 (que sí tienen
+Á Í Ó Ú) no está medido.
 
 ### Self-test (fragmento)
 

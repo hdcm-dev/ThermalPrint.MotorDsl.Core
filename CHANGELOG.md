@@ -56,6 +56,20 @@ que el número de versión **no** vive en los `.csproj`.
 
 ### Corregido
 
+- **Acentos en `escpos-bitmap`** (el renderer de la impresora Bluetooth 58HB6):
+  `BitmapEscPosRenderer` codificaba el texto en ASCII y é, ó, ñ, °, ¿, ¡ salían como «?». Ahora
+  codifica con la misma tabla que `EscPosRenderer`: PC437 por defecto, seleccionada con `ESC t 0`.
+  `ESC t` se emite sólo si algún texto lleva caracteres fuera de ASCII, así que un ticket ASCII sale
+  byte a byte como antes. PC437 no tiene Á Í Ó Ú: salen sin acento (Á → A), no como «?».
+- **`EscPosTextEncoding`** (`MotorDsl.Rendering`): la tabla (`ESC t n`) y la página de códigos
+  del texto se resuelven en un solo lugar para `escpos` y `escpos-bitmap`, a partir de
+  `DeviceProfile.CodePage` y `DeviceProfile.CodePageCommand`, que hasta ahora ningún renderer
+  leía. Sin `CodePage` la salida de `escpos` no cambia. Una página distinta de 437 exige su
+  `CodePageCommand`, porque el número de `ESC t` depende del fabricante; sin él, el render
+  devuelve un error. Los códigos QR y de barras no cambian.
+- **Tests**: `EscPosTextEncodingTests` (bytes de «Acta N°», «Infracción» y «Ñandú» en los dos
+  renderers, ticket ASCII sin cambios, ¿ ¡, mayúsculas que PC437 no tiene, PC850/PC858 desde el
+  perfil y error sin `CodePageCommand`).
 - **Texto partido en el PNG de `raster-preview`** (el que recibe la impresora del PAX A910S):
   `RasterPreviewRenderer` dibujaba en un solo renglón el `WrappedText` que el `LayoutEngine` parte
   con `'\n'`. El salto salía como un recuadro (glifo faltante), el resto del texto se cortaba a
