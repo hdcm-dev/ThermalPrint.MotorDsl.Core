@@ -12,6 +12,16 @@ que el número de versión **no** vive en los `.csproj`.
 
 ### Añadido
 
+- **`MotorDsl.Pax`** (noveno paquete, `net10.0-android`): transporte `pax` para la impresora
+  interna del PAX A910S. Envía el PNG de raster-preview, mapea los errores de la impresora
+  (incluida la causa en `PrinterHardwareException`) y trae una impresora simulada y el perfil A910S.
+  El binding NeptuneLite 4.15.00 se compila sólo si está el SDK local
+  (`scripts/pax-sdk/preparar-sdk.sh`); el paquete publicado por `cd-nuget.yml` sale **sin**
+  binding (`-p:PaxNeptune=false`) hasta que haya licencia de redistribución del material PAX, y
+  en ese caso el modo Real responde `Connection` («Avisá a soporte»).
+- **`cd-nuget.yml`**: `MotorDsl.Pax` se empaqueta en `pack-platform` (macos-15), el control de
+  conteo pasa de 8 a 9 y se publica al final del orden de push.
+
 - **`scripts/local-devcontainer/`**: versión Linux de `scripts/local/`. Compila los cinco
   samples a APK dentro de un **contenedor Docker efímero** (.NET 10 + workload `maui-android` +
   JDK 17 + SDK de Android, imagen `motordsl-android-build:net10`), así que el host solo necesita

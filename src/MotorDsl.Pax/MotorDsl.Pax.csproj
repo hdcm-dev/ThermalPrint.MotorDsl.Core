@@ -40,4 +40,38 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
 	</ItemGroup>
 
+	<!--
+	Binding NeptuneLite 4.15.00 embebido (U2). El jar y las .so vienen del material PAX, que no trae
+	licencia de redistribucion: NO se versionan; scripts/pax-sdk/preparar-sdk.sh los copia a
+	Neptune/sdk/. Sin esa carpeta el proyecto compila sin binding (PaxNeptune=false): el modo Real
+	cae en UnavailablePaxPrinterDevice (Connection) y el simulado funciona igual.
+	-->
+	<PropertyGroup>
+		<PaxSdkDir Condition="'$(PaxSdkDir)' == ''">$(MSBuildThisFileDirectory)Neptune/sdk/</PaxSdkDir>
+		<PaxNeptune Condition="'$(PaxNeptune)' == '' And Exists('$(PaxSdkDir)NeptuneLiteApi_V4.15.00_20250606.jar')">true</PaxNeptune>
+		<PaxNeptune Condition="'$(PaxNeptune)' == ''">false</PaxNeptune>
+		<DefineConstants Condition="'$(PaxNeptune)' == 'true'">$(DefineConstants);MOTORDSL_PAX_NEPTUNE</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(PaxNeptune)' == 'true'">
+		<!-- El SDK auto-incluye **/*.jar como AndroidLibrary: sin este Remove el jar entra dos veces al .aar. -->
+		<AndroidLibrary Remove="@(AndroidLibrary)" />
+		<AndroidLibrary Include="$(PaxSdkDir)NeptuneLiteApi_V4.15.00_20250606.jar" />
+		<AndroidNativeLibrary Include="$(PaxSdkDir)arm64-v8a/libDeviceConfig.so" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Include="$(PaxSdkDir)arm64-v8a/libpaxcanvas.so" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Include="$(PaxSdkDir)armeabi-v7a/libDeviceConfig.so" Abi="armeabi-v7a" />
+		<TransformFile Include="Neptune/Transforms/Metadata.xml" />
+		<ProguardConfiguration Include="Neptune/NeptuneProguardRules.pro" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(PaxNeptune)' != 'true'">
+		<Compile Remove="Neptune/**/*.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Neptune/**" />
+		<None Include="Neptune/NeptuneProguardRules.pro" />
+		<None Include="Neptune/Transforms/Metadata.xml" />
+	</ItemGroup>
+
 </Project>
