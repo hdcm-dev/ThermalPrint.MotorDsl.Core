@@ -149,7 +149,7 @@ Se publican **9 paquetes** en nuget.org (`MotorDsl.Pax` todavía no tiene versi�
 La versión NO se fija en los `.csproj`: el pipeline calcula una **versión unificada** (auto-bump de patch consultando nuget.org, vía `get-next-version.ps1`) e inyecta el mismo número en los 9 paquetes para evitar `NU1605`.
 
 **Trigger:** tag `v*` en GitHub (ej. `v1.0.0`).  
-**Secret requerido:** `NUGET_API_KEY` (configurado en GitHub Secrets).  
+**Credencial:** Trusted Publishing de nuget.org (OIDC, `NuGet/login`); no hay secreto de API key en el repositorio. Ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §4.3.  
 **Workflow:** `.github/workflows/cd-nuget.yml`.
 
 ### 6.4 Validación en producción
@@ -323,5 +323,6 @@ Incluye:
 | v1.1    | 2026-04-02 | DevOps | PROD = NuGet.org real; tabla de los 7 paquetes publicados; samples Nuget.MultaApp / Nuget.Integrated.MultaApp |
 | v1.2    | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en la tabla, sin binding NeptuneLite |
 | v1.3    | 2026-11-18 | Agente (Feature 04) | `MotorDsl.Pax`: contrato y simulador, implementación real externa |
+| v1.4    | 2026-11-18 | Agente (Feature 04) | §6.3: credencial por Trusted Publishing en lugar del secreto de API key |
 
 ---
