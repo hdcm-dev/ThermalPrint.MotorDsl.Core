@@ -420,5 +420,3 @@ FodyWeavers.xsd
 out/
 
 nutpkg/
-# SDK PAX NeptuneLite (sin licencia de redistribucion verificada): se prepara con scripts/pax-sdk/preparar-sdk.sh
-src/MotorDsl.Pax/Neptune/sdk/

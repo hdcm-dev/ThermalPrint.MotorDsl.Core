@@ -1,8 +1,10 @@
 namespace MotorDsl.Pax;
 
 /// <summary>
-/// Abstraccion propia entre <see cref="PaxPrinterTransport"/> y el SDK NeptuneLite. Las
-/// implementaciones son la real (NeptuneLite, unidad U2) y <see cref="SimulatedPaxPrinterDevice"/>.
+/// Contrato entre <see cref="PaxPrinterTransport"/> y la impresora interna del PAX A910S. Este
+/// paquete trae <see cref="SimulatedPaxPrinterDevice"/>; la implementacion real (sobre el SDK
+/// NeptuneLite del fabricante) es externa y se registra con
+/// <see cref="PaxPrinterOptions.RealDeviceFactory"/>.
 /// <para>
 /// Contrato de errores: los codigos del SDK NO se traducen aca. <see cref="GetStatusAsync"/> y
 /// <see cref="PrintAsync"/> devuelven el codigo crudo de <c>getStatus()</c> / <c>onError</c>

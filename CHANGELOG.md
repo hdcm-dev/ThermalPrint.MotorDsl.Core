@@ -15,18 +15,20 @@ que el número de versión **no** vive en los `.csproj`.
 - **`MotorDsl.Pax`** (noveno paquete, `net10.0-android`): transporte `pax` para la impresora
   interna del PAX A910S. Envía el PNG de raster-preview, mapea los errores de la impresora
   (incluida la causa en `PrinterHardwareException`) y trae una impresora simulada y el perfil A910S.
-  El binding NeptuneLite 4.15.00 se compila sólo si está el SDK local
-  (`scripts/pax-sdk/preparar-sdk.sh`); el paquete publicado por `cd-nuget.yml` sale **sin**
-  binding (`-p:PaxNeptune=false`) hasta que haya licencia de redistribución del material PAX, y
-  en ese caso el modo Real responde `Connection` («Avisá a soporte»).
+  **`MotorDsl.Pax` es el contrato y el simulador; la implementación real es externa.** El
+  paquete define `IPaxPrinterDevice` y no trae ningún binario del SDK del fabricante: la
+  implementación real del dispositivo la aporta un paquete aparte, que la registra por el punto
+  de extensión `PaxPrinterOptions.RealDeviceFactory`
+  (`AddPaxPrinterTransport(o => o.RealDeviceFactory = _ => new MiDispositivoPax())`). En modo
+  `Simulated` la fábrica nunca se invoca; en modo `Real` sin implementación registrada, conectar
+  responde `Connection` («Avisá a soporte») y la app no se cae.
 - **`cd-nuget.yml`**: `MotorDsl.Pax` se empaqueta en `pack-platform` (macos-15), el control de
   conteo pasa de 8 a 9 y se publica al final del orden de push.
 - **Scripts de publicación con el noveno paquete**: `tag-next-version.sh`,
   `publish-motordsl-nuget.bat` y `build-motordsl-nuget.bat` suman `MotorDsl.Pax` a sus listas
-  (consulta de versión, restore, build, pack, push y resumen). El `.bat` de publicación fuerza
-  `-p:PaxNeptune=false`, igual que `cd-nuget.yml`: **el paquete público sale sin binding** y
-  la máquina que lo corre necesita la workload `android`. `docs/09_devops` pasa de 8 a 9
-  paquetes y suma la §3.4 de la guía de publicación.
+  (consulta de versión, restore, build, pack, push y resumen). La máquina que corre el `.bat`
+  de publicación necesita la workload `android`. `docs/09_devops` pasa de 8 a 9 paquetes y suma
+  la §3.4 de la guía de publicación («contrato y punto de extensión»).
 
 - **`scripts/local-devcontainer/`**: versión Linux de `scripts/local/`. Compila los cinco
   samples a APK dentro de un **contenedor Docker efímero** (.NET 10 + workload `maui-android` +
