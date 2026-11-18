@@ -7,9 +7,12 @@ name: CD NuGet - Publish MotorDsl
 # y el workload `ios` NO EXISTE para Linux — `dotnet workload install ios` responde
 # "Workload ID ios isn't supported on this platform" y el build corta con NETSDK1178. Por eso
 # esos dos paquetes solo pueden empaquetarse en macOS, mientras que los otros seis son net10.0
-# puro y salen del runner self-hosted, que es gratis y mas rapido. MotorDsl.Pax (net10.0-android)
-# va tambien en macOS porque ese runner ya instala la workload android; no esta verificado que
-# i7infra-dev la tenga.
+# puro y salen de ubuntu-latest. MotorDsl.Pax (net10.0-android) va tambien en macOS porque ese
+# runner ya instala la workload android.
+#
+# Runners: todos son de GitHub. El repositorio es publico y sus minutos no se cobran; version,
+# pack-managed y publish no usan nada propio de un runner self-hosted (el NUGET_API_KEY es un
+# secreto del repositorio), y en la cola compartida del self-hosted hacian fila detras de otros repos.
 #
 # MotorDsl.Pax sale SIN el binding NeptuneLite: el jar y las .so del SDK PAX no se versionan
 # (no hay licencia de redistribucion), asi que el csproj compila con PaxNeptune=false y el modo
@@ -33,8 +36,7 @@ jobs:
   # Se resuelve una sola vez y se propaga por outputs. Los 9 comparten numero para
   # evitar NU1605 (downgrade de dependencia) en apps que mezclen varios.
   version:
-    # runs-on: ubuntu-latest
-    runs-on: [self-hosted, ci-hdcm]
+    runs-on: ubuntu-latest
     outputs:
       package_version: ${{ steps.resolve.outputs.package_version }}
     steps:
@@ -55,8 +57,7 @@ jobs:
   # ── Los 6 paquetes net10.0 ───────────────────────────────────────────────────
   pack-managed:
     needs: version
-    # runs-on: ubuntu-latest
-    runs-on: [self-hosted, ci-hdcm]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
@@ -66,10 +67,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # .NET en un directorio propio del job: la imagen ubuntu-latest (26.04) trae el SDK 11 en
+      # /usr/share/dotnet y, sin global.json, `dotnet` usaria el SDK mas nuevo y no DOTNET_VERSION.
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: SDK en uso
+        run: dotnet --list-sdks && dotnet --version
 
       - name: Restore
         run: |
@@ -164,18 +172,24 @@ jobs:
   # ── Publicacion ──────────────────────────────────────────────────────────────
   publish:
     needs: [version, pack-managed, pack-platform]
-    # runs-on: ubuntu-latest
-    runs-on: [self-hosted, ci-hdcm]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
       PACKAGE_VERSION: ${{ needs.version.outputs.package_version }}
 
     steps:
+      # .NET en un directorio propio del job: la imagen ubuntu-latest (26.04) trae el SDK 11 en
+      # /usr/share/dotnet y, sin global.json, `dotnet` usaria el SDK mas nuevo y no DOTNET_VERSION.
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: SDK en uso
+        run: dotnet --list-sdks && dotnet --version
 
       - name: Bajar los paquetes de ambos jobs
         uses: actions/download-artifact@v4

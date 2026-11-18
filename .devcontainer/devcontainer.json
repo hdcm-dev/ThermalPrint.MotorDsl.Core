@@ -2,7 +2,7 @@
   "name": "MotorDsl (.NET 10)",
   "build": { "dockerfile": "Dockerfile" },
   "//build": "Imagen propia en vez de mcr.microsoft.com/devcontainers/dotnet:1-10.0, que hoy entrega el SDK 10.0.100-rc.2. El fundamento completo esta en .devcontainer/Dockerfile.",
-  "//alcance": "Solo compila los TFM net10.0. net10.0-android se valida en el runner self-hosted i7infra-dev; net10.0-ios solo en macos-15, porque el workload ios no existe para Linux.",
+  "//alcance": "Solo compila los TFM net10.0. net10.0-android se valida en el workflow cd-android (ubuntu-latest); net10.0-ios solo en macos-15, porque el workload ios no existe para Linux.",
   "postCreateCommand": "dotnet restore src/MotorDsl.Tests/MotorDsl.Tests.csproj",
   "//postCreateCommand": "Restaurar el proyecto de tests arrastra por ProjectReference los 6 proyectos net10.0, que es todo lo compilable en este contenedor.",
   "customizations": {

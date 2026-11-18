@@ -44,6 +44,14 @@ que el número de versión **no** vive en los `.csproj`.
   porque dos servidores de adb no pueden compartir el USB. `--url` reescribe `backendBaseUrl`
   solo en la copia, sin tocar el `motordsl-config.json` del árbol.
 
+### Cambiado
+
+- **Runners de Linux**: `ci.yml`, `cd-android.yml` y los jobs `version`, `pack-managed` y
+  `publish` de `cd-nuget.yml` pasan del runner self-hosted a `ubuntu-latest`. El repositorio es
+  público y los minutos de los runners de GitHub no se cobran; ninguno de esos jobs usa algo propio
+  del self-hosted, cuya cola compartida demoraba la CI de un PR hasta 1 h 36 min. Los workflows
+  de iOS y `pack-platform` siguen en `macos-15`.
+
 ## [1.0.17] - 2026-08-27
 
 ### Cambiado
