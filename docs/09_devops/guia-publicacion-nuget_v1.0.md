@@ -114,7 +114,7 @@ Se publican **9 paquetes** NuGet:
 | `MotorDsl.Network` | Transport de red TCP 9100 (RAW/JetDirect), multiplataforma, `AddNetworkPrinterTransport()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 | `MotorDsl.Bluetooth` | Transport Bluetooth Classic SPP (Android; iOS lanza `PlatformNotSupportedException`), `AddBluetoothPrinterTransport()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 | `MotorDsl.Maui` | Controles MAUI y renderers (PDF, ESC/POS bitmap, SkiaSharp), `AddMotorDslMaui()` | `SkiaSharp.Views.Maui.Controls`, `PdfSharpCore`, `QRCoder` | → Core, Rendering, Extensions, Printing.Abstractions |
-| `MotorDsl.Pax` | Transport `pax` para la impresora interna del PAX A910S (envía el PNG de raster-preview), mapeo de errores, impresora simulada y perfil A910S. **El paquete público sale sin el binding NeptuneLite** (§3.4) | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
+| `MotorDsl.Pax` | Transport `pax` para la impresora interna del PAX A910S (envía el PNG de raster-preview), mapeo de errores, impresora simulada y perfil A910S. **Es el contrato `IPaxPrinterDevice`; la implementación real es externa** (§3.4) | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 
 > `MotorDsl.Bluetooth` y `MotorDsl.Maui` multi-targetan `net10.0-android;net10.0-ios`; `MotorDsl.Pax` es `net10.0-android`; los demás son `net10.0`.
 > Esa diferencia decide dónde se pueden empaquetar: los `net10.0` en cualquier plataforma, esos dos **solo en macOS o Windows**, porque el workload `ios` no existe para Linux, y `MotorDsl.Pax` en cualquier máquina con la workload `android` (en `cd-nuget.yml` va en el job `pack-platform`, `macos-15`).
@@ -136,18 +136,35 @@ dotnet add package MotorDsl.Bluetooth
 
 `MotorDsl.Maui` arrastra transitivamente `MotorDsl.Printing.Abstractions` (y `SkiaSharp`, `PdfSharpCore`, `QRCoder`).
 
-### 3.4 `MotorDsl.Pax`: el paquete público sale sin binding
+### 3.4 `MotorDsl.Pax`: contrato y punto de extensión
 
-`MotorDsl.Pax` tiene dos modos de compilación, que decide la propiedad MSBuild `PaxNeptune`:
+`MotorDsl.Pax` es el **contrato** de la impresora interna del PAX A910S y todo lo que no depende del SDK del fabricante:
 
-| `PaxNeptune` | Cuándo | Qué trae el paquete | Modo Real en el A910S |
-|---|---|---|---|
-| `true` | Compilación local con el SDK PAX preparado en `src/MotorDsl.Pax/Neptune/sdk/` (`scripts/pax-sdk/preparar-sdk.sh`); se detecta sola | Transport, simulador, perfil A910S **y** el binding NeptuneLite 4.15.00 (jar y `.so`) | Imprime por NeptuneLite |
-| `false` | **Todo paquete público**: `cd-nuget.yml` y `scripts/nuget/publish-motordsl-nuget.bat` lo fuerzan con `-p:PaxNeptune=false` | Transport, simulador y perfil A910S, **sin** jar ni `.so` | Responde `Connection` («Avisá a soporte») |
+| Trae | Qué es |
+|---|---|
+| `IPaxPrinterDevice` | El contrato entre el transport y la impresora: abrir, `GetStatusAsync` y `PrintAsync` con el código crudo (0 = ok), fallas por excepción como `PaxSdkException` |
+| `PaxPrinterTransport` (`Kind = "pax"`) | Envía el PNG de raster-preview y traduce los errores con `PaxErrorMapping` |
+| `SimulatedPaxPrinterDevice` | Impresora simulada que vuelca el PNG a disco; para builds de desarrollo |
+| `PaxProfiles` | Perfil A910S |
+| `AddPaxPrinterTransport()` | Registro en DI, con `PaxPrinterOptions` |
 
-**Por qué:** el jar y las `.so` del SDK PAX no se versionan y no hay licencia de redistribución del material PAX. Forzar `false` en los dos caminos de publicación hace que el contenido del paquete no dependa de si la máquina que empaqueta tiene o no el SDK.
+**No trae ningún binario del SDK del fabricante** (ni jar ni `.so`): el `.aar` del paquete sólo lleva el código administrado. La **implementación real** de `IPaxPrinterDevice` es **externa**: la aporta un paquete aparte y se registra por el punto de extensión `PaxPrinterOptions.RealDeviceFactory`:
 
-**Consecuencia para el consumidor:** una app que necesite imprimir de verdad en el A910S no puede usar hoy el paquete de nuget.org: compila contra un feed propio (local o privado) con el paquete armado con el binding. El canal del paquete con binding se decide cuando el A910S esté validado en el equipo; hasta entonces no se publica ese paquete.
+```csharp
+services.AddPaxPrinterTransport(o =>
+{
+    o.Mode = PaxPrinterMode.Real;
+    o.RealDeviceFactory = opciones => new MiDispositivoPax();   // implementa IPaxPrinterDevice
+});
+```
+
+| Modo | Dispositivo que se usa |
+|---|---|
+| `Simulated` | `SimulatedPaxPrinterDevice`; `RealDeviceFactory` **nunca** se invoca |
+| `Real` con `RealDeviceFactory` | Lo que devuelve la fábrica (se invoca una vez, al resolver el dispositivo) |
+| `Real` sin fábrica, o fábrica que devuelve `null` | Conectar responde `Connection` («Avisá a soporte»); la app no se cae |
+
+**Por qué:** el material del SDK del fabricante no trae licencia de redistribución, así que no se versiona ni se publica desde este repositorio. Separar contrato e implementación deja el paquete público libre de ese material y permite a cualquiera escribir su propia implementación de `IPaxPrinterDevice`. Como el contenido del paquete ya no depende de la máquina que empaqueta, no hace falta ninguna propiedad MSBuild para publicarlo.
 
 ---
 
@@ -206,7 +223,7 @@ La versión NO se fija en el `.csproj`: se inyecta en build/pack vía `/p:Versio
 | Network | `MotorDsl.Network` | Transport de impresión por red TCP (puerto 9100 / RAW / JetDirect) para MotorDsl. Multiplataforma: Android, iOS y escritorio |
 | Bluetooth | `MotorDsl.Bluetooth` | Transport Bluetooth Classic SPP (Android). iOS no soportado (lanza `PlatformNotSupportedException`) |
 | Maui | `MotorDsl.Maui` | Controles MAUI y renderers (PDF, ESC/POS bitmap, SkiaSharp) para MotorDsl |
-| Pax | `MotorDsl.Pax` | Transport de impresion para la impresora interna del PAX A910S (Android, SDK NeptuneLite) para MotorDsl. Envia el PNG de raster-preview; incluye impresora simulada. |
+| Pax | `MotorDsl.Pax` | Transport de impresion para la impresora interna del PAX A910S (Android) para MotorDsl: contrato IPaxPrinterDevice, transport que envia el PNG de raster-preview, mapeo de errores e impresora simulada. La implementacion real del dispositivo es externa (RealDeviceFactory). |
 
 ---
 
@@ -214,7 +231,7 @@ La versión NO se fija en el `.csproj`: se inyecta en build/pack vía `/p:Versio
 
 ### 6.1 Publicación local con el script canónico
 
-El flujo completo de publicación está automatizado en `scripts/nuget/publish-motordsl-nuget.bat`, que empaqueta y publica los **9 paquetes** (con `-p:PaxNeptune=false`, §3.4; necesita las workloads `ios` y `android`). Sus pasos: resuelve la API key (`MOTORDSL_NUGET_API_KEY` o prompt), calcula la versión unificada (auto-bump de patch), hace restore + build Release, corre `dotnet test`, empaqueta con `dotnet pack` y hace `dotnet nuget push` a nuget.org con `--skip-duplicate`, y crea/pushea el tag git `v<version>`.
+El flujo completo de publicación está automatizado en `scripts/nuget/publish-motordsl-nuget.bat`, que empaqueta y publica los **9 paquetes** (necesita las workloads `ios` y `android`). Sus pasos: resuelve la API key (`MOTORDSL_NUGET_API_KEY` o prompt), calcula la versión unificada (auto-bump de patch), hace restore + build Release, corre `dotnet test`, empaqueta con `dotnet pack` y hace `dotnet nuget push` a nuget.org con `--skip-duplicate`, y crea/pushea el tag git `v<version>`.
 
 Para una prueba manual de empaquetado de los 9 proyectos:
 
@@ -228,7 +245,7 @@ dotnet pack src/MotorDsl.Printing.Abstractions/MotorDsl.Printing.Abstractions.cs
 dotnet pack src/MotorDsl.Bluetooth/MotorDsl.Bluetooth.csproj -c Release -o ./nupkg
 dotnet pack src/MotorDsl.Network/MotorDsl.Network.csproj -c Release -o ./nupkg
 dotnet pack src/MotorDsl.Maui/MotorDsl.Maui.csproj -c Release -o ./nupkg
-dotnet pack src/MotorDsl.Pax/MotorDsl.Pax.csproj -c Release -p:PaxNeptune=false -o ./nupkg
+dotnet pack src/MotorDsl.Pax/MotorDsl.Pax.csproj -c Release -o ./nupkg
 ```
 
 Verificar el contenido:
@@ -494,3 +511,4 @@ Consumir:
 |---|---|---|---|
 | v1.0 | 2026-04-02 | Arquitectura / DevOps | Guía inicial de publicación y consumo NuGet |
 | v1.0 | 2026-11-18 | Agente (Feature 04, PAX A910S) | Noveno paquete `MotorDsl.Pax`: conteos de 8 a 9, fila en §3.2 y §5.2, nueva §3.4 (el paquete público sale sin binding, `-p:PaxNeptune=false`), `Network` y `Pax` en la prueba manual de §6.1 |
+| v1.0 | 2026-11-18 | Agente (Feature 04, contrato) | §3.4 reescrita como «contrato y punto de extensión»: `MotorDsl.Pax` no trae binarios del SDK y la implementación real es externa (`RealDeviceFactory`); se retira `PaxNeptune` de §6.1 y de la descripción de §5.2 |

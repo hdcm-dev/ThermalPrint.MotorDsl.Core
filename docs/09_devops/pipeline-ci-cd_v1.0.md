@@ -124,7 +124,7 @@ El conjunto real de librerías publicables son **9 paquetes**:
 * MotorDsl.Network
 * MotorDsl.Bluetooth
 * MotorDsl.Maui
-* MotorDsl.Pax (`net10.0-android`, sin el binding NeptuneLite (`-p:PaxNeptune=false`; ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §3.4))
+* MotorDsl.Pax (`net10.0-android`; contrato `IPaxPrinterDevice` y simulador, la implementación real es externa: ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §3.4)
 
 > El workflow `cd-nuget.yml` publica los **9** paquetes repartiendo el `pack` en dos runners: los 6 `net10.0` en `ubuntu-latest` y `MotorDsl.Bluetooth` / `MotorDsl.Maui` / `MotorDsl.Pax` en `macos-15`. La separación es estructural: `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM y el workload `ios` no existe para Linux. Antes publicaba solo las 4 librerías core y el resto dependía del script local `scripts/nuget/publish-motordsl-nuget.bat`.
 
@@ -377,5 +377,6 @@ Planeado para v2.x:
 | v1.0    | 2026-03-29 | DevOps | Pipeline inicial para publicación NuGet |
 | v1.1    | 2026-04-02 | DevOps | Publicación real en NuGet.org (NUGET_API_KEY), cd-ios-multaapp.yml, samples MotorDsl.Nuget.MultaApp / MotorDsl.Nuget.Integrated.MultaApp |
 | v1.2    | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en `pack-platform`, sin binding NeptuneLite |
+| v1.3    | 2026-11-18 | Agente (Feature 04) | `MotorDsl.Pax` es contrato y simulador; `cd-nuget.yml` ya no pasa `-p:PaxNeptune=false` |
 
 ---

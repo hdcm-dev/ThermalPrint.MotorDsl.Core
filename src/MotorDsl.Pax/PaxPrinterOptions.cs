@@ -2,7 +2,10 @@ namespace MotorDsl.Pax;
 
 public enum PaxPrinterMode
 {
-    /// <summary>Impresora interna real via NeptuneLite.</summary>
+    /// <summary>
+    /// Impresora interna real: la implementacion de <see cref="IPaxPrinterDevice"/> que entrega
+    /// <see cref="PaxPrinterOptions.RealDeviceFactory"/>.
+    /// </summary>
     Real,
     /// <summary><see cref="SimulatedPaxPrinterDevice"/>: vuelca el PNG a disco. Solo builds de desarrollo.</summary>
     Simulated
@@ -47,8 +50,10 @@ public sealed class PaxPrinterOptions
     public PaxSimulatedStatus SimulatedStatus { get; set; } = PaxSimulatedStatus.Ok;
 
     /// <summary>
-    /// Fabrica del dispositivo real. La unidad U2 (binding NeptuneLite) la completa; mientras sea
-    /// null, el modo Real falla al conectar con Connection (nunca tira la app).
+    /// Fabrica del dispositivo real: el punto de extension por el que un paquete externo registra su
+    /// implementacion de <see cref="IPaxPrinterDevice"/>. Se invoca una vez, solo en modo Real, al
+    /// resolver el dispositivo; recibe estas mismas opciones. Si es null o devuelve null, el modo
+    /// Real falla al conectar con Connection (nunca tira la app).
     /// </summary>
     public Func<PaxPrinterOptions, IPaxPrinterDevice>? RealDeviceFactory { get; set; }
 }

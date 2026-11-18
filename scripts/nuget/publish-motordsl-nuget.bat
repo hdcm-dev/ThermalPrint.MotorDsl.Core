@@ -8,12 +8,10 @@ echo.
 :: -------------------------------------------------------
 :: Paquetes: los 9 de la libreria. MotorDsl.Pax es net10.0-android: la maquina que corre
 :: este script necesita la workload android (dotnet workload install android), ademas de
-:: la ios para Bluetooth y Maui. Pax se compila y empaqueta SIN el binding NeptuneLite
-:: (-p:PaxNeptune=false): el SDK PAX no se redistribuye, asi que el paquete publico no trae
-:: el jar ni las .so y en el equipo el modo Real responde Connection. Mismo criterio que
-:: .github/workflows/cd-nuget.yml; ver docs/09_devops/guia-publicacion-nuget_v1.0.md.
+:: la ios para Bluetooth y Maui. MotorDsl.Pax es el contrato IPaxPrinterDevice, el transport,
+:: el simulador y el perfil: no trae binarios del SDK del fabricante; la implementacion real
+:: es externa (RealDeviceFactory). Ver docs/09_devops/guia-publicacion-nuget_v1.0.md.
 :: -------------------------------------------------------
-set PAX_PROPS=-p:PaxNeptune=false
 
 :: -------------------------------------------------------
 :: [0/7] Resolver API Key (env var o prompt interactivo)
@@ -95,7 +93,7 @@ if not exist "%NUPKG_DIR%" mkdir "%NUPKG_DIR%"
 :: -------------------------------------------------------
 echo [1/7] Restore de las 9 librerias ...
 for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
-    dotnet restore "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" --nologo %PAX_PROPS%
+    dotnet restore "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" --nologo
     if !errorlevel! neq 0 (
         echo ERROR: Fallo restore de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -108,7 +106,7 @@ echo.
 :: -------------------------------------------------------
 echo [2/7] Build Release de las 9 librerias ...
 for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
-    dotnet build "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-restore --nologo /p:Version=%MOTORDSL_VERSION% /p:MotorDslVersion=%MOTORDSL_VERSION% %PAX_PROPS%
+    dotnet build "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-restore --nologo /p:Version=%MOTORDSL_VERSION% /p:MotorDslVersion=%MOTORDSL_VERSION%
     if !errorlevel! neq 0 (
         echo ERROR: Fallo build de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -133,7 +131,7 @@ echo.
 :: -------------------------------------------------------
 echo [4/7] Empaquetando las 9 librerias ...
 for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
-    dotnet pack "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-build --nologo -p:PackageVersion=%MOTORDSL_VERSION% -p:MotorDslVersion=%MOTORDSL_VERSION% -p:PackageReleaseNotes="Release %MOTORDSL_VERSION%" %PAX_PROPS% -o "%NUPKG_DIR%"
+    dotnet pack "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-build --nologo -p:PackageVersion=%MOTORDSL_VERSION% -p:MotorDslVersion=%MOTORDSL_VERSION% -p:PackageReleaseNotes="Release %MOTORDSL_VERSION%" -o "%NUPKG_DIR%"
     if !errorlevel! neq 0 (
         echo ERROR: Fallo pack de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -223,7 +221,7 @@ echo    MotorDsl.Extensions             %MOTORDSL_VERSION%
 echo    MotorDsl.Bluetooth              %MOTORDSL_VERSION%
 echo    MotorDsl.Network                %MOTORDSL_VERSION%
 echo    MotorDsl.Maui                   %MOTORDSL_VERSION%
-echo    MotorDsl.Pax                    %MOTORDSL_VERSION%  ^(sin binding NeptuneLite^)
+echo    MotorDsl.Pax                    %MOTORDSL_VERSION%  ^(contrato y simulador^)
 echo.
 echo  La indexacion en nuget.org puede demorar varios minutos.
 echo ===================================================

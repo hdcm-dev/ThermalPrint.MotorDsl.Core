@@ -7,7 +7,7 @@ using MotorDsl.Printing;
 
 namespace MotorDsl.Tests;
 
-/// <summary>Feature 04 (PAX A910S), unidad U1: transport "pax", mapeo de errores, simulador, perfil y DI.</summary>
+/// <summary>Feature 04 (PAX A910S), unidad U1: transport "pax", mapeo de errores, simulador, perfil, DI y punto de extension RealDeviceFactory.</summary>
 public class PaxTransportTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "motordsl-pax-tests-" + Guid.NewGuid().ToString("N"));
@@ -327,7 +327,7 @@ public class PaxTransportTests : IDisposable
     }
 
     [Fact]
-    public async Task Modo_Real_sin_SDK_falla_con_Connection_sin_crash()
+    public async Task Modo_Real_sin_implementacion_registrada_falla_con_Connection_sin_crash()
     {
         var sp = new ServiceCollection().AddPaxPrinterTransport().BuildServiceProvider();
         var t = sp.GetRequiredService<IThermalPrinterTransport>();
@@ -336,11 +336,38 @@ public class PaxTransportTests : IDisposable
     }
 
     [Fact]
-    public void Modo_Real_usa_la_fabrica_del_SDK()
+    public void Modo_Real_usa_la_implementacion_externa_de_RealDeviceFactory()
     {
         var fake = new FakePaxDevice();
-        var sp = new ServiceCollection().AddPaxPrinterTransport(o => o.RealDeviceFactory = _ => fake).BuildServiceProvider();
+        PaxPrinterOptions? recibidas = null;
+        var sp = new ServiceCollection()
+            .AddPaxPrinterTransport(o => o.RealDeviceFactory = opt => { recibidas = opt; return fake; })
+            .BuildServiceProvider();
         Assert.Same(fake, sp.GetRequiredService<IPaxPrinterDevice>());
+        Assert.Same(sp.GetRequiredService<PaxPrinterOptions>(), recibidas);
+    }
+
+    [Fact]
+    public async Task Modo_Real_con_fabrica_que_devuelve_null_falla_con_Connection_sin_crash()
+    {
+        var sp = new ServiceCollection().AddPaxPrinterTransport(o => o.RealDeviceFactory = _ => null!).BuildServiceProvider();
+        var t = sp.GetRequiredService<IThermalPrinterTransport>();
+        var ex = await Assert.ThrowsAsync<PaxConnectionException>(() => t.ConnectAsync("pax-internal"));
+        Assert.Equal(PrintErrorType.Connection, Classify(ex));
+    }
+
+    [Fact]
+    public void Modo_Simulated_nunca_invoca_RealDeviceFactory()
+    {
+        var llamadas = 0;
+        var sp = new ServiceCollection().AddPaxPrinterTransport(o =>
+        {
+            o.Mode = PaxPrinterMode.Simulated;
+            o.OutputDirectory = _dir;
+            o.RealDeviceFactory = _ => { llamadas++; return new FakePaxDevice(); };
+        }).BuildServiceProvider();
+        Assert.IsType<SimulatedPaxPrinterDevice>(sp.GetRequiredService<IPaxPrinterDevice>());
+        Assert.Equal(0, llamadas);
     }
 }
 

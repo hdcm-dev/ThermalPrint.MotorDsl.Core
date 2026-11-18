@@ -14,9 +14,9 @@ name: CD NuGet - Publish MotorDsl
 # pack-managed y publish no usan nada propio de un runner self-hosted (el NUGET_API_KEY es un
 # secreto del repositorio), y en la cola compartida del self-hosted hacian fila detras de otros repos.
 #
-# MotorDsl.Pax sale SIN el binding NeptuneLite: el jar y las .so del SDK PAX no se versionan
-# (no hay licencia de redistribucion), asi que el csproj compila con PaxNeptune=false y el modo
-# Real cae en Connection. Se fuerza -p:PaxNeptune=false para que no dependa de la deteccion.
+# MotorDsl.Pax es el contrato (IPaxPrinterDevice), el transport, el simulador y el perfil: no trae
+# ningun binario del SDK del fabricante. La implementacion real del dispositivo es externa y se
+# registra con PaxPrinterOptions.RealDeviceFactory.
 
 on:
   push:
@@ -146,7 +146,7 @@ jobs:
       - name: Build Release
         run: |
           for proj in Bluetooth Maui Pax; do
-            dotnet build src/MotorDsl.$proj/MotorDsl.$proj.csproj -c Release --no-restore -p:PaxNeptune=false
+            dotnet build src/MotorDsl.$proj/MotorDsl.$proj.csproj -c Release --no-restore
           done
 
       - name: Pack los 3 proyectos de plataforma
@@ -155,7 +155,6 @@ jobs:
             dotnet pack src/MotorDsl.$proj/MotorDsl.$proj.csproj \
               -c Release \
               --no-build \
-              -p:PaxNeptune=false \
               -p:PackageVersion=${{ env.PACKAGE_VERSION }} \
               -p:PackageReleaseNotes="Release ${{ env.PACKAGE_VERSION }}" \
               -o ./nupkg

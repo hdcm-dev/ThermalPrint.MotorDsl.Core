@@ -13,8 +13,8 @@
 #   MotorDsl.Pax, net10.0-android). Lo unico que ese workflow no hace es elegir el numero de
 #   version: lo toma del tag.
 #
-#   MotorDsl.Pax se publica SIN el binding NeptuneLite (-p:PaxNeptune=false): el SDK PAX no
-#   se redistribuye, y en el equipo el modo Real responde `Connection`. Ver
+#   MotorDsl.Pax es el contrato IPaxPrinterDevice, el transport y el simulador: no trae
+#   binarios del SDK del fabricante y la implementacion real es externa. Ver
 #   docs/09_devops/guia-publicacion-nuget_v1.0.md.
 #
 #   Este script cubre exactamente ese hueco. No necesita el SDK de .NET: solo consulta

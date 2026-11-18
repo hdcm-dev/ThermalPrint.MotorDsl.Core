@@ -7,10 +7,8 @@ echo.
 
 set SRC_DIR=%~dp0..\..\src
 
-:: MotorDsl.Pax es net10.0-android: hace falta la workload android. Aca no se fuerza
-:: PaxNeptune: si esta el SDK PAX local (scripts/pax-sdk/preparar-sdk.sh) compila con el
-:: binding NeptuneLite; si no, sin el. Para publicar, publish-motordsl-nuget.bat fuerza
-:: -p:PaxNeptune=false, igual que cd-nuget.yml.
+:: MotorDsl.Pax es net10.0-android: hace falta la workload android. Es el contrato
+:: IPaxPrinterDevice y el simulador; la implementacion real del dispositivo es externa.
 
 :: -------------------------------------------------------
 :: [1/2] Restore de las 9 librerias

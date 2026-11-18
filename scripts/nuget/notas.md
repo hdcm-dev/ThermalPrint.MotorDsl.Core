@@ -49,11 +49,11 @@ Script: `publish-motordsl-nuget.bat`
    Calcula `version unificada = max(next(patch) de cada paquete)`. Esto evita
    `NU1605` al consumir desde apps que mezclen varios.
 3. Restore + Build Release de las 9 librerias con
-   `/p:Version=<unificada> /p:MotorDslVersion=<unificada> -p:PaxNeptune=false`.
+   `/p:Version=<unificada> /p:MotorDslVersion=<unificada>`.
 4. Restore + `dotnet test` de `MotorDsl.Tests`. Si fallan, aborta antes de
    publicar.
 5. `dotnet pack` de las 9 librerias con
-   `-p:PackageVersion=<unificada> -p:MotorDslVersion=<unificada> -p:PaxNeptune=false`
+   `-p:PackageVersion=<unificada> -p:MotorDslVersion=<unificada>`
    a `./nupkg/`.
 6. `dotnet nuget push` a `https://api.nuget.org/v3/index.json` con
    `--skip-duplicate`.
@@ -140,9 +140,9 @@ Otras opciones disponibles si en el futuro se quiere cambiar el esquema:
   plataforma, es consumible desde `net10.0-android` y `net10.0-ios` por herencia
   de TFM, y da soporte de impresion en iOS sin necesitar una maquina Apple para
   construirse.
-- **`MotorDsl.Pax` se publica sin el binding NeptuneLite.** El jar y las `.so` del SDK PAX
-  no se versionan ni se redistribuyen (falta licencia), asi que el `.bat` y `cd-nuget.yml`
-  empaquetan con `-p:PaxNeptune=false`: el paquete publico trae el transporte, el simulador y
-  el perfil A910S, pero en el equipo el modo Real responde `Connection`. El binding solo se
-  compila en local con el SDK (`scripts/pax-sdk/preparar-sdk.sh`). Detalle en
+- **`MotorDsl.Pax` es el contrato y el simulador.** Trae `IPaxPrinterDevice`, el transporte,
+  el mapeo de errores, la impresora simulada y el perfil A910S, y ningun binario del SDK del
+  fabricante. La implementacion real del dispositivo es externa: un paquete aparte implementa
+  `IPaxPrinterDevice` y la registra con `PaxPrinterOptions.RealDeviceFactory`. Sin ella, en el
+  equipo el modo Real responde `Connection`. Detalle en
   `docs/09_devops/guia-publicacion-nuget_v1.0.md`.
