@@ -67,10 +67,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # .NET en un directorio propio del job: la imagen ubuntu-latest (26.04) trae el SDK 11 en
+      # /usr/share/dotnet y, sin global.json, `dotnet` usaria el SDK mas nuevo y no DOTNET_VERSION.
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: SDK en uso
+        run: dotnet --list-sdks && dotnet --version
 
       - name: Restore
         run: |
@@ -172,10 +179,17 @@ jobs:
       PACKAGE_VERSION: ${{ needs.version.outputs.package_version }}
 
     steps:
+      # .NET en un directorio propio del job: la imagen ubuntu-latest (26.04) trae el SDK 11 en
+      # /usr/share/dotnet y, sin global.json, `dotnet` usaria el SDK mas nuevo y no DOTNET_VERSION.
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: SDK en uso
+        run: dotnet --list-sdks && dotnet --version
 
       - name: Bajar los paquetes de ambos jobs
         uses: actions/download-artifact@v4
