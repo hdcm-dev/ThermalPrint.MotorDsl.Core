@@ -78,7 +78,7 @@ De este modo, una publicación siempre libera los 9 paquetes con la misma versi�
 | `workflow_dispatch` | versión unificada calculada | Sí — push a nuget.org |
 | Push a `main` | `0.0.0-preview.<run_number>` | No — solo artifact descargable |
 
-El step de publicación a nuget.org del workflow `.github/workflows/cd-nuget.yml` solo se ejecuta en tags `v*` o `workflow_dispatch`, usando el secret `NUGET_API_KEY`.
+El step de publicación a nuget.org del workflow `.github/workflows/cd-nuget.yml` solo se ejecuta en tags `v*` o `workflow_dispatch`, con una API key temporal obtenida por Trusted Publishing de nuget.org (`NuGet/login`, sin secreto guardada en el repositorio; ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §4.3). Una versión publicada en nuget.org no se puede republicar: un tag no se reescribe ni se reutiliza.
 
 ---
 
@@ -135,5 +135,6 @@ Printing.Abstractions → Core → Parser → Rendering → Extensions → Bluet
 |---|---|---|---|
 | v1.0 | 2026-03-28 | DevOps | Estrategia inicial de versionado SemVer con versión unificada y auto-bump |
 | v1.0 | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en la versión unificada |
+| v1.0 | 2026-11-18 | Agente (Feature 04) | §6: la publicación usa Trusted Publishing en lugar del secreto de API key |
 
 ---

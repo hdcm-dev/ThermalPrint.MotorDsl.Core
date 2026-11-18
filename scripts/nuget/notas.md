@@ -124,8 +124,9 @@ Otras opciones disponibles si en el futuro se quiere cambiar el esquema:
 - Los 9 paquetes se publican con la **misma version unificada** para evitar
   resoluciones cruzadas con `NU1605`.
 - El workflow `.github/workflows/cd-nuget.yml` hace lo equivalente desde CI
-  usando `secrets.NUGET_API_KEY`. Este script local sirve para publicaciones
-  puntuales sin pasar por GitHub Actions.
+  con Trusted Publishing de nuget.org (API key temporal por OIDC, sin secreto
+  en el repositorio). Este script local sirve para publicaciones puntuales sin
+  pasar por GitHub Actions, y es el único camino que usa una API key propia.
 - `MotorDsl.Bluetooth` y `MotorDsl.Maui` tienen TFMs duales
   (`net10.0-android;net10.0-ios`). El pack genera ambos targets dentro del
   mismo `.nupkg`. Para iOS, el contenido de `MotorDsl.Bluetooth` es estructural:

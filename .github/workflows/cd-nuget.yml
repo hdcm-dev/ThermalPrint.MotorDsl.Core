@@ -11,8 +11,14 @@ name: CD NuGet - Publish MotorDsl
 # runner ya instala la workload android.
 #
 # Runners: todos son de GitHub. El repositorio es publico y sus minutos no se cobran; version,
-# pack-managed y publish no usan nada propio de un runner self-hosted (el NUGET_API_KEY es un
-# secreto del repositorio), y en la cola compartida del self-hosted hacian fila detras de otros repos.
+# pack-managed y publish no usan nada propio de un runner self-hosted, y en la cola compartida del
+# self-hosted hacian fila detras de otros repos.
+#
+# Credencial de nuget.org: Trusted Publishing (OIDC). No hay API key guardada en el repositorio:
+# el job publish pide a GitHub un token OIDC (permissions id-token: write), NuGet/login lo canjea
+# en nuget.org por una API key temporal (vale 1 hora, un token da una sola key) y dotnet nuget push
+# la usa. nuget.org la emite solo si el token coincide con la politica de Trusted Publishing del
+# dueno de los paquetes: repositorio de este workflow, archivo cd-nuget.yml, sin environment.
 #
 # MotorDsl.Pax es el contrato (IPaxPrinterDevice), el transport, el simulador y el perfil: no trae
 # ningun binario del SDK del fabricante. La implementacion real del dispositivo es externa y se
@@ -174,6 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write   # token OIDC de GitHub para Trusted Publishing de nuget.org
     env:
       PACKAGE_VERSION: ${{ needs.version.outputs.package_version }}
 
@@ -206,13 +213,29 @@ jobs:
             exit 1
           fi
 
+      # API key temporal de nuget.org por Trusted Publishing (OIDC -> key de 1 hora). Se pide
+      # justo antes del push para que no venza. `user` es el nombre de perfil de nuget.org del
+      # dueno de la politica (no el email).
+      - name: NuGet login (OIDC -> API key temporal)
+        id: nuget-login
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        uses: NuGet/login@v1
+        with:
+          user: fernandofilipuzzi.utn
+
       - name: Publish to NuGet.org
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::NuGet/login no devolvio API key: revisar la politica de Trusted Publishing en nuget.org."
+            exit 1
+          fi
           # Orden de dependencias: Printing.Abstractions primero, los consumidores despues.
           for proj in Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax; do
             dotnet nuget push "./nupkg/MotorDsl.$proj.${{ env.PACKAGE_VERSION }}.nupkg" \
-              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --api-key "$NUGET_API_KEY" \
               --source https://api.nuget.org/v3/index.json \
               --skip-duplicate
           done

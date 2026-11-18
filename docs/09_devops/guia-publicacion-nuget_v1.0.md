@@ -181,9 +181,33 @@ El destino productivo real es **NuGet.org**.
 
 | Destino | Cuenta requerida | Token / API Key |
 |---|---|---|
-| **NuGet.org** (destino real) | Cuenta en [nuget.org](https://www.nuget.org) | API Key con scope **Push** para `MotorDsl.*`, expuesta al pipeline como secret `NUGET_API_KEY` |
+| **NuGet.org** (destino real) | Cuenta en [nuget.org](https://www.nuget.org) dueña de los paquetes `MotorDsl.*` | **Ninguna guardada.** El pipeline usa *Trusted Publishing* (§4.3) y recibe una API key temporal por ejecución. Sólo la publicación manual desde una máquina local (§6.5) usa una API key propia con scope **Push** |
 
 > Para **consumir** desde nuget.org no se requiere autenticación.
+
+### 4.3 Trusted Publishing (publicación desde GitHub Actions sin API key)
+
+`cd-nuget.yml` publica con [Trusted Publishing de nuget.org](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): no hay API key de larga vida en los secretos del repositorio.
+
+1. El job `publish` declara `permissions: id-token: write` (además de `contents: read`), y GitHub le emite un token OIDC firmado con los datos del repositorio y del workflow.
+2. El paso `NuGet/login@v1` canjea ese token en nuget.org (`https://www.nuget.org/api/v2/token`) y devuelve en su salida `NUGET_API_KEY` una API key **temporal: vale 1 hora**, y cada token da una sola key. Por eso el paso corre inmediatamente antes del push.
+3. `dotnet nuget push` usa `${{ steps.nuget-login.outputs.NUGET_API_KEY }}`.
+
+nuget.org emite la key sólo si el token coincide con una **política de Trusted Publishing** creada en nuget.org (usuario → *Trusted Publishing*) por el dueño de los paquetes:
+
+| Campo de la política | Valor para este repositorio |
+|---|---|
+| Owner | La cuenta de nuget.org dueña de `MotorDsl.*`; es el `user` que recibe `NuGet/login` en el workflow (nombre de perfil, **no** el email) |
+| Repository Owner / Repository | `hdcm-dev` / `ThermalPrint.MotorDsl.Core` |
+| Workflow File | `cd-nuget.yml` (sólo el nombre, sin `.github/workflows/`) |
+| Environment | Vacío: el job no usa environments de GitHub |
+| Scopes | Publicar paquetes nuevos y versiones nuevas, con el glob que cubra `MotorDsl.*` |
+
+Consecuencias:
+
+- **Renombrar `cd-nuget.yml`, mover el repositorio o agregarle un `environment` al job** deja de coincidir con la política: hay que actualizarla en nuget.org antes de etiquetar.
+- La key temporal no se guarda ni se rota: vence sola.
+- Un push a `main` no pide key: el login y el push corren sólo con tag `v*` o `workflow_dispatch`.
 
 ---
 
@@ -278,10 +302,12 @@ git push origin v1.0.0
 
 1. Ejecuta la suite de tests (`dotnet test`)
 2. Empaqueta los proyectos con la versión del tag (ej: `1.0.0`)
-3. Publica en **NuGet.org** (`https://api.nuget.org/v3/index.json`) usando `secrets.NUGET_API_KEY`
+3. Pide una API key temporal por Trusted Publishing (`NuGet/login`, §4.3) y publica en **NuGet.org** (`https://api.nuget.org/v3/index.json`) con `--skip-duplicate`
 4. Sube los `.nupkg` como artifacts del workflow
 
-> El step **Publish to NuGet.org** solo corre cuando el ref es un tag `v*` o el run es `workflow_dispatch`.
+> Los steps **NuGet login** y **Publish to NuGet.org** sólo corren cuando el ref es un tag `v*` o el run es `workflow_dispatch`.
+>
+> nuget.org **no permite republicar** una versión ya publicada: un tag que publicó a medias no se reintenta con el mismo número sin diagnosticar; `--skip-duplicate` saltea los paquetes que ya subieron.
 
 #### Paso 3 — Verificar
 
@@ -300,7 +326,7 @@ En un push a `main`, el workflow calcula la versión `0.0.0-preview.<run_number>
 
 ### 6.5 Publicación manual desde la máquina local
 
-Como alternativa al workflow, se puede publicar manualmente (o usar el script `scripts/nuget/publish-motordsl-nuget.bat`):
+Como alternativa al workflow, se puede publicar manualmente (o usar el script `scripts/nuget/publish-motordsl-nuget.bat`). Es la única vía que usa una API key de larga vida, y esa key queda en la máquina de quien publica, nunca en el repositorio:
 
 #### Paso 1 — Obtener API Key
 
@@ -451,7 +477,9 @@ MAJOR.MINOR.PATCH
 error: Response status code does not indicate success: 401 (Unauthorized)
 ```
 
-**Solución:** verificar que la API Key (`NUGET_API_KEY`) tenga scope **Push** para los paquetes `MotorDsl.*` y no esté expirada. Regenerar en nuget.org si corresponde.
+**Desde el workflow** (falla el paso `NuGet login` o el push con 401/403): la política de Trusted Publishing no coincide con el token. Verificar en nuget.org que la política esté activa y que repositorio, dueño y `Workflow File` (`cd-nuget.yml`) coincidan; que el job no tenga un `environment` que la política no declara; que el job `publish` conserve `id-token: write`; y que el `user` de `NuGet/login` sea el nombre de perfil del dueño de la política. La key temporal vence a la hora: si el push corre mucho después del login, falla.
+
+**Desde la máquina local** (§6.5): verificar que la API key tenga scope **Push** para los paquetes `MotorDsl.*` y no esté expirada. Regenerar en nuget.org si corresponde.
 
 ### 9.2 Paquete no aparece en el feed
 
@@ -512,3 +540,4 @@ Consumir:
 | v1.0 | 2026-04-02 | Arquitectura / DevOps | Guía inicial de publicación y consumo NuGet |
 | v1.0 | 2026-11-18 | Agente (Feature 04, PAX A910S) | Noveno paquete `MotorDsl.Pax`: conteos de 8 a 9, fila en §3.2 y §5.2, nueva §3.4 (el paquete público sale sin binding, `-p:PaxNeptune=false`), `Network` y `Pax` en la prueba manual de §6.1 |
 | v1.0 | 2026-11-18 | Agente (Feature 04, contrato) | §3.4 reescrita como «contrato y punto de extensión»: `MotorDsl.Pax` no trae binarios del SDK y la implementación real es externa (`RealDeviceFactory`); se retira `PaxNeptune` de §6.1 y de la descripción de §5.2 |
+| v1.0 | 2026-11-18 | Agente (Feature 04, Trusted Publishing) | `cd-nuget.yml` publica por Trusted Publishing (`NuGet/login@v1`, `id-token: write`): §4.2, §4.3 nueva, §6.2, §6.5 y §9.1; ya no hay secreto de API key en el repositorio |

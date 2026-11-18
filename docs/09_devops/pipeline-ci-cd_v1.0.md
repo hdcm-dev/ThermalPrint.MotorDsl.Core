@@ -206,7 +206,7 @@ MotorDsl.Extensions.<ver>.nupkg
 
 **Condición adicional:** solo en tags `v*` (ej. `v1.0.2`)
 
-**Secret requerido:** `NUGET_API_KEY` (configurado en GitHub Secrets)
+**Credencial:** Trusted Publishing de nuget.org. El job `publish` tiene `permissions: id-token: write`; el paso `NuGet/login@v1` canjea el token OIDC de GitHub por una API key temporal (1 hora) y el push la toma de `steps.nuget-login.outputs.NUGET_API_KEY`. No hay secreto de API key en el repositorio (detalle y campos de la política en [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §4.3)
 
 **Metadatos requeridos en cada csproj:**
 `<PackageId>`, `<Authors>`, `<Description>`, `<PackageTags>`, `<PackageLicenseExpression>`, `<RepositoryUrl>`
@@ -214,7 +214,7 @@ MotorDsl.Extensions.<ver>.nupkg
 **Comando base** (un push por paquete; ejemplo con Core)
 
 ```bash
-dotnet nuget push ./nupkg/MotorDsl.Core.<ver>.nupkg --api-key <NUGET_API_KEY> --source https://api.nuget.org/v3/index.json --skip-duplicate
+dotnet nuget push ./nupkg/MotorDsl.Core.<ver>.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
 ```
 
 ---
@@ -278,7 +278,7 @@ Fallback:
 
 Variables mínimas:
 
-* NUGET_API_KEY
+* NUGET_API_KEY (sólo dentro del paso de push, tomada de la salida de `NuGet/login`; no es un secreto del repositorio)
 * NUGET_SOURCE
 * BUILD_CONFIGURATION
 * VERSION
@@ -286,7 +286,7 @@ Variables mínimas:
 **Reglas**
 
 * Nunca hardcodear API keys
-* Usar secretos del pipeline
+* En CI, credenciales de corta vida por OIDC (Trusted Publishing) antes que secretos de larga vida
 
 ---
 
@@ -332,7 +332,7 @@ publish:
 ├── cd-ios-sampleapp.yml         ← .app.zip SampleApp, iossimulator-arm64 (macos-15)
 ├── cd-ios-multaapp.yml          ← .app.zip MultaApp, iossimulator-arm64 (macos-15)
 ├── cd-ios-multaapp.nuget.yml    ← .app.zip MultaApp (consumo NuGet), iossimulator-arm64 (macos-15)
-└── cd-nuget.yml                 ← NuGet.org en tags v*, NUGET_API_KEY (ubuntu-latest)
+└── cd-nuget.yml                 ← NuGet.org en tags v*, Trusted Publishing (ubuntu-latest)
 ```
 
 ---
@@ -344,7 +344,7 @@ publish:
 | Versionado incorrecto | Alta    | uso de tags SemVer           |
 | Publicación duplicada | Alta    | versiones inmutables         |
 | Tests insuficientes   | Alta    | cobertura mínima obligatoria |
-| API key expuesta      | Crítica | uso de secrets seguros       |
+| API key expuesta      | Crítica | Trusted Publishing: key temporal de 1 hora, sin secreto guardado |
 
 ---
 
@@ -352,7 +352,7 @@ publish:
 
 Implementado en v1.0 (actualización):
 
-- ✅ Publicación automática en NuGet.org (cd-nuget.yml con NUGET_API_KEY)
+- ✅ Publicación automática en NuGet.org (cd-nuget.yml con Trusted Publishing, sin API key guardada)
 - ✅ Conjunto de 9 paquetes: MotorDsl.Core, Parser, Rendering, Extensions, Printing.Abstractions, Network, Bluetooth, Maui, Pax (publicados por `cd-nuget.yml` o por `publish-motordsl-nuget.bat`, con versión unificada)
 - ✅ Soporte iOS: cd-ios-sampleapp.yml, cd-ios-multaapp.yml y cd-ios-multaapp.nuget.yml
 - ✅ Samples de integración NuGet: MotorDsl.Nuget.MultaApp y MotorDsl.Nuget.Integrated.MultaApp
@@ -378,5 +378,6 @@ Planeado para v2.x:
 | v1.1    | 2026-04-02 | DevOps | Publicación real en NuGet.org (NUGET_API_KEY), cd-ios-multaapp.yml, samples MotorDsl.Nuget.MultaApp / MotorDsl.Nuget.Integrated.MultaApp |
 | v1.2    | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en `pack-platform`, sin binding NeptuneLite |
 | v1.3    | 2026-11-18 | Agente (Feature 04) | `MotorDsl.Pax` es contrato y simulador; `cd-nuget.yml` ya no pasa `-p:PaxNeptune=false` |
+| v1.4    | 2026-11-18 | Agente (Feature 04) | `cd-nuget.yml` publica por Trusted Publishing (`NuGet/login@v1`, `id-token: write`); se retira el secreto de API key |
 
 ---
