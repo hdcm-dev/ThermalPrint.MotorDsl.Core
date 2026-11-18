@@ -4,14 +4,14 @@
 
 | Quiero… | Herramienta | Donde corre |
 |---|---|---|
-| **Publicar los 8 paquetes** | `tag-next-version.sh` -> dispara `cd-nuget.yml` | Linux, sin SDK |
+| **Publicar los 9 paquetes** | `tag-next-version.sh` -> dispara `cd-nuget.yml` | Linux, sin SDK |
 | Publicar sin pasar por CI | `publish-motordsl-nuget.bat` | **Solo Windows o macOS** |
 | Solo compilar, sin publicar | `build-motordsl-nuget.bat` | Solo Windows o macOS |
 
 **Por que el `.bat` no se porto a `.sh`.** `dotnet pack` de un proyecto multi-TFM exige
 compilar todos sus TFM, y el workload `ios` no existe para Linux: `dotnet workload install ios`
 responde *"Workload ID ios isn't supported on this platform"* y el build corta con `NETSDK1178`.
-Un port a `.sh` solo podria empaquetar 6 de 8 — quedarian afuera `MotorDsl.Bluetooth` y
+Un port a `.sh` solo podria empaquetar 7 de 9 — quedarian afuera `MotorDsl.Bluetooth` y
 `MotorDsl.Maui` —, o sea que seria estrictamente peor que el `.bat`. La ruta completa desde
 Linux es el workflow, que reparte el pack entre el runner Linux y uno macOS.
 
@@ -35,7 +35,7 @@ Script: `publish-motordsl-nuget.bat`
 1. Resuelve la API key de nuget.org desde `MOTORDSL_NUGET_API_KEY` (env var)
    o la pide por prompt.
 2. Consulta `https://api.nuget.org/v3-flatcontainer/<paquete>/index.json` para
-   los **8 paquetes**:
+   los **9 paquetes**:
    - `MotorDsl.Core`
    - `MotorDsl.Parser`
    - `MotorDsl.Rendering`
@@ -44,21 +44,22 @@ Script: `publish-motordsl-nuget.bat`
    - `MotorDsl.Network`
    - `MotorDsl.Bluetooth`
    - `MotorDsl.Maui`
+   - `MotorDsl.Pax`
 
    Calcula `version unificada = max(next(patch) de cada paquete)`. Esto evita
    `NU1605` al consumir desde apps que mezclen varios.
-3. Restore + Build Release de las 8 librerias con
-   `/p:Version=<unificada> /p:MotorDslVersion=<unificada>`.
+3. Restore + Build Release de las 9 librerias con
+   `/p:Version=<unificada> /p:MotorDslVersion=<unificada> -p:PaxNeptune=false`.
 4. Restore + `dotnet test` de `MotorDsl.Tests`. Si fallan, aborta antes de
    publicar.
-5. `dotnet pack` de las 8 librerias con
-   `-p:PackageVersion=<unificada> -p:MotorDslVersion=<unificada>`
+5. `dotnet pack` de las 9 librerias con
+   `-p:PackageVersion=<unificada> -p:MotorDslVersion=<unificada> -p:PaxNeptune=false`
    a `./nupkg/`.
 6. `dotnet nuget push` a `https://api.nuget.org/v3/index.json` con
    `--skip-duplicate`.
    **Orden de push (por dependencias)**:
    `Printing.Abstractions` → `Core` → `Parser` → `Rendering` → `Extensions` →
-   `Network` → `Bluetooth` → `Maui`.
+   `Network` → `Bluetooth` → `Maui` → `Pax`.
 7. Tag git `v<unificada>` y push a origin (dispara el workflow
    `cd-nuget.yml`).
 8. Limpia el cache HTTP de NuGet.
@@ -72,7 +73,8 @@ ellos en escenarios futuros sin tener que parsear `Version` en MSBuild.
 
 ## Requisitos
 
-- .NET SDK 10 instalado (`dotnet --version`).
+- .NET SDK 10 instalado (`dotnet --version`), con las workloads `ios` y `android`
+  (`MotorDsl.Pax` es `net10.0-android`).
 - API key de nuget.org con scope de push:
   https://www.nuget.org/account/apikeys
 - Conexion a internet (para consultar versiones publicadas y para el push).
@@ -119,7 +121,7 @@ Otras opciones disponibles si en el futuro se quiere cambiar el esquema:
   el fallback `1.0.0`.
 - La indexacion en nuget.org tras un push puede tardar varios minutos
   (especialmente para los paquetes nuevos en su primera publicación).
-- Los 8 paquetes se publican con la **misma version unificada** para evitar
+- Los 9 paquetes se publican con la **misma version unificada** para evitar
   resoluciones cruzadas con `NU1605`.
 - El workflow `.github/workflows/cd-nuget.yml` hace lo equivalente desde CI
   usando `secrets.NUGET_API_KEY`. Este script local sirve para publicaciones
@@ -132,8 +134,15 @@ Otras opciones disponibles si en el futuro se quiere cambiar el esquema:
   multi-TFM exige compilar todos sus TFM, y el workload `ios` no existe para
   Linux: `dotnet workload install ios` responde *"Workload ID ios isn't
   supported on this platform"* y el build corta con `NETSDK1178`. Los otros seis
-  paquetes son `net10.0` puro y se empaquetan en cualquier plataforma.
+  paquetes son `net10.0` puro y se empaquetan en cualquier plataforma, y
+  `MotorDsl.Pax` (`net10.0-android`) en cualquiera con la workload `android`.
 - `MotorDsl.Network` es `net10.0` puro **a proposito**: al no llevar sufijo de
   plataforma, es consumible desde `net10.0-android` y `net10.0-ios` por herencia
   de TFM, y da soporte de impresion en iOS sin necesitar una maquina Apple para
   construirse.
+- **`MotorDsl.Pax` se publica sin el binding NeptuneLite.** El jar y las `.so` del SDK PAX
+  no se versionan ni se redistribuyen (falta licencia), asi que el `.bat` y `cd-nuget.yml`
+  empaquetan con `-p:PaxNeptune=false`: el paquete publico trae el transporte, el simulador y
+  el perfil A910S, pero en el equipo el modo Real responde `Connection`. El binding solo se
+  compila en local con el SDK (`scripts/pax-sdk/preparar-sdk.sh`). Detalle en
+  `docs/09_devops/guia-publicacion-nuget_v1.0.md`.

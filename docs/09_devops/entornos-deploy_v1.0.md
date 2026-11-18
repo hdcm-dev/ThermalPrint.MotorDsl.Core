@@ -132,7 +132,7 @@ Publicar versiones estables del motor DSL como librería consumible en **NuGet.o
 
 ### 6.3 Destino de publicación NuGet
 
-Se publican **8 paquetes** en nuget.org:
+Se publican **9 paquetes** en nuget.org (`MotorDsl.Pax` todavía no tiene versión publicada):
 
 | Paquete                        | Registry  | URL                                                           |
 |--------------------------------|-----------|--------------------------------------------------------------|
@@ -144,8 +144,9 @@ Se publican **8 paquetes** en nuget.org:
 | MotorDsl.Network               | nuget.org | https://www.nuget.org/packages/MotorDsl.Network               |
 | MotorDsl.Bluetooth             | nuget.org | https://www.nuget.org/packages/MotorDsl.Bluetooth            |
 | MotorDsl.Maui                  | nuget.org | https://www.nuget.org/packages/MotorDsl.Maui                 |
+| MotorDsl.Pax                   | nuget.org | https://www.nuget.org/packages/MotorDsl.Pax (sale sin el binding NeptuneLite (`-p:PaxNeptune=false`; ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §3.4)) |
 
-La versión NO se fija en los `.csproj`: el pipeline calcula una **versión unificada** (auto-bump de patch consultando nuget.org, vía `get-next-version.ps1`) e inyecta el mismo número en los 8 paquetes para evitar `NU1605`.
+La versión NO se fija en los `.csproj`: el pipeline calcula una **versión unificada** (auto-bump de patch consultando nuget.org, vía `get-next-version.ps1`) e inyecta el mismo número en los 9 paquetes para evitar `NU1605`.
 
 **Trigger:** tag `v*` en GitHub (ej. `v1.0.0`).  
 **Secret requerido:** `NUGET_API_KEY` (configurado en GitHub Secrets).  
@@ -320,5 +321,6 @@ Incluye:
 | ------- | ---------- | ------ | ------------------------------ |
 | v1.0    | 2026-03-28 | DevOps | Definición inicial de entornos |
 | v1.1    | 2026-04-02 | DevOps | PROD = NuGet.org real; tabla de los 7 paquetes publicados; samples Nuget.MultaApp / Nuget.Integrated.MultaApp |
+| v1.2    | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en la tabla, sin binding NeptuneLite |
 
 ---

@@ -62,13 +62,13 @@ Existen dos enfoques principales para publicar una librería compuesta por vario
 
 | Opción | Paquetes publicados | El consumidor instala | Complejidad |
 |---|---|---|---|
-| **A) Granular (8 paquetes)** (actual) | `Core`, `Parser`, `Rendering`, `Extensions`, `Printing.Abstractions`, `Network`, `Bluetooth`, `Maui` | `MotorDsl.Extensions` (motor core) o `MotorDsl.Maui` + `MotorDsl.Bluetooth` (apps MAUI) | Alta — versiones sincronizadas |
+| **A) Granular (9 paquetes)** (actual) | `Core`, `Parser`, `Rendering`, `Extensions`, `Printing.Abstractions`, `Network`, `Bluetooth`, `Maui`, `Pax` | `MotorDsl.Extensions` (motor core) o `MotorDsl.Maui` + `MotorDsl.Bluetooth` (apps MAUI) | Alta — versiones sincronizadas |
 | **B) 1 paquete** | `MotorDsl` (todo junto) | `MotorDsl` | Baja — 1 versión, 1 artefacto |
 | **C) 2 paquetes** | `MotorDsl.Core` (contratos) + `MotorDsl` (todo) | `MotorDsl` | Media — separación contratos/implementación |
 
 ### 2.5 Decisión adoptada
 
-Se adopta el **enfoque granular (8 paquetes)**. El punto de entrada depende del escenario de consumo:
+Se adopta el **enfoque granular (9 paquetes)**. El punto de entrada depende del escenario de consumo:
 
 - **Motor core** (consola, API, Worker, etc.): instalar `MotorDsl.Extensions`, que trae transitivamente `Core`, `Parser` y `Rendering`, y expone `AddMotorDslEngine()`.
 - **Apps MAUI** (impresión térmica Bluetooth + renderers PDF/bitmap/preview): instalar además `MotorDsl.Maui` y `MotorDsl.Bluetooth`. El punto de entrada es `AddMotorDslMaui()` (extiende `MotorDslBuilder`) y `AddBluetoothPrinterTransport()`. `MotorDsl.Maui` arrastra transitivamente `MotorDsl.Printing.Abstractions`.
@@ -102,7 +102,7 @@ Se adopta el **enfoque granular (8 paquetes)**. El punto de entrada depende del 
 
 ### 3.2 Tabla de paquetes
 
-Se publican **8 paquetes** NuGet:
+Se publican **9 paquetes** NuGet:
 
 | Paquete | Contenido | Dependencias NuGet | Dependencias internas |
 |---|---|---|---|
@@ -114,9 +114,10 @@ Se publican **8 paquetes** NuGet:
 | `MotorDsl.Network` | Transport de red TCP 9100 (RAW/JetDirect), multiplataforma, `AddNetworkPrinterTransport()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 | `MotorDsl.Bluetooth` | Transport Bluetooth Classic SPP (Android; iOS lanza `PlatformNotSupportedException`), `AddBluetoothPrinterTransport()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 | `MotorDsl.Maui` | Controles MAUI y renderers (PDF, ESC/POS bitmap, SkiaSharp), `AddMotorDslMaui()` | `SkiaSharp.Views.Maui.Controls`, `PdfSharpCore`, `QRCoder` | → Core, Rendering, Extensions, Printing.Abstractions |
+| `MotorDsl.Pax` | Transport `pax` para la impresora interna del PAX A910S (envía el PNG de raster-preview), mapeo de errores, impresora simulada y perfil A910S. **El paquete público sale sin el binding NeptuneLite** (§3.4) | `Microsoft.Extensions.DependencyInjection.Abstractions` | → Printing.Abstractions |
 
-> `MotorDsl.Bluetooth` y `MotorDsl.Maui` multi-targetan `net10.0-android;net10.0-ios`; los demás son `net10.0`.
-> Esa diferencia decide dónde se pueden empaquetar: los `net10.0` en cualquier plataforma, esos dos **solo en macOS o Windows**, porque el workload `ios` no existe para Linux.
+> `MotorDsl.Bluetooth` y `MotorDsl.Maui` multi-targetan `net10.0-android;net10.0-ios`; `MotorDsl.Pax` es `net10.0-android`; los demás son `net10.0`.
+> Esa diferencia decide dónde se pueden empaquetar: los `net10.0` en cualquier plataforma, esos dos **solo en macOS o Windows**, porque el workload `ios` no existe para Linux, y `MotorDsl.Pax` en cualquier máquina con la workload `android` (en `cd-nuget.yml` va en el job `pack-platform`, `macos-15`).
 
 ### 3.3 ¿Qué instala el consumidor?
 
@@ -134,6 +135,19 @@ dotnet add package MotorDsl.Bluetooth
 ```
 
 `MotorDsl.Maui` arrastra transitivamente `MotorDsl.Printing.Abstractions` (y `SkiaSharp`, `PdfSharpCore`, `QRCoder`).
+
+### 3.4 `MotorDsl.Pax`: el paquete público sale sin binding
+
+`MotorDsl.Pax` tiene dos modos de compilación, que decide la propiedad MSBuild `PaxNeptune`:
+
+| `PaxNeptune` | Cuándo | Qué trae el paquete | Modo Real en el A910S |
+|---|---|---|---|
+| `true` | Compilación local con el SDK PAX preparado en `src/MotorDsl.Pax/Neptune/sdk/` (`scripts/pax-sdk/preparar-sdk.sh`); se detecta sola | Transport, simulador, perfil A910S **y** el binding NeptuneLite 4.15.00 (jar y `.so`) | Imprime por NeptuneLite |
+| `false` | **Todo paquete público**: `cd-nuget.yml` y `scripts/nuget/publish-motordsl-nuget.bat` lo fuerzan con `-p:PaxNeptune=false` | Transport, simulador y perfil A910S, **sin** jar ni `.so` | Responde `Connection` («Avisá a soporte») |
+
+**Por qué:** el jar y las `.so` del SDK PAX no se versionan y no hay licencia de redistribución del material PAX. Forzar `false` en los dos caminos de publicación hace que el contenido del paquete no dependa de si la máquina que empaqueta tiene o no el SDK.
+
+**Consecuencia para el consumidor:** una app que necesite imprimir de verdad en el A910S no puede usar hoy el paquete de nuget.org: compila contra un feed propio (local o privado) con el paquete armado con el binding. El canal del paquete con binding se decide cuando el A910S esté validado en el equipo; hasta entonces no se publica ese paquete.
 
 ---
 
@@ -192,6 +206,7 @@ La versión NO se fija en el `.csproj`: se inyecta en build/pack vía `/p:Versio
 | Network | `MotorDsl.Network` | Transport de impresión por red TCP (puerto 9100 / RAW / JetDirect) para MotorDsl. Multiplataforma: Android, iOS y escritorio |
 | Bluetooth | `MotorDsl.Bluetooth` | Transport Bluetooth Classic SPP (Android). iOS no soportado (lanza `PlatformNotSupportedException`) |
 | Maui | `MotorDsl.Maui` | Controles MAUI y renderers (PDF, ESC/POS bitmap, SkiaSharp) para MotorDsl |
+| Pax | `MotorDsl.Pax` | Transport de impresion para la impresora interna del PAX A910S (Android, SDK NeptuneLite) para MotorDsl. Envia el PNG de raster-preview; incluye impresora simulada. |
 
 ---
 
@@ -199,9 +214,9 @@ La versión NO se fija en el `.csproj`: se inyecta en build/pack vía `/p:Versio
 
 ### 6.1 Publicación local con el script canónico
 
-El flujo completo de publicación está automatizado en `scripts/nuget/publish-motordsl-nuget.bat`, que empaqueta y publica los **8 paquetes**. Sus pasos: resuelve la API key (`MOTORDSL_NUGET_API_KEY` o prompt), calcula la versión unificada (auto-bump de patch), hace restore + build Release, corre `dotnet test`, empaqueta con `dotnet pack` y hace `dotnet nuget push` a nuget.org con `--skip-duplicate`, y crea/pushea el tag git `v<version>`.
+El flujo completo de publicación está automatizado en `scripts/nuget/publish-motordsl-nuget.bat`, que empaqueta y publica los **9 paquetes** (con `-p:PaxNeptune=false`, §3.4; necesita las workloads `ios` y `android`). Sus pasos: resuelve la API key (`MOTORDSL_NUGET_API_KEY` o prompt), calcula la versión unificada (auto-bump de patch), hace restore + build Release, corre `dotnet test`, empaqueta con `dotnet pack` y hace `dotnet nuget push` a nuget.org con `--skip-duplicate`, y crea/pushea el tag git `v<version>`.
 
-Para una prueba manual de empaquetado de los 8 proyectos:
+Para una prueba manual de empaquetado de los 9 proyectos:
 
 ```bash
 # Desde la raíz del repositorio
@@ -211,7 +226,9 @@ dotnet pack src/MotorDsl.Rendering/MotorDsl.Rendering.csproj -c Release -o ./nup
 dotnet pack src/MotorDsl.Extensions/MotorDsl.Extensions.csproj -c Release -o ./nupkg
 dotnet pack src/MotorDsl.Printing.Abstractions/MotorDsl.Printing.Abstractions.csproj -c Release -o ./nupkg
 dotnet pack src/MotorDsl.Bluetooth/MotorDsl.Bluetooth.csproj -c Release -o ./nupkg
+dotnet pack src/MotorDsl.Network/MotorDsl.Network.csproj -c Release -o ./nupkg
 dotnet pack src/MotorDsl.Maui/MotorDsl.Maui.csproj -c Release -o ./nupkg
+dotnet pack src/MotorDsl.Pax/MotorDsl.Pax.csproj -c Release -p:PaxNeptune=false -o ./nupkg
 ```
 
 Verificar el contenido:
@@ -224,7 +241,9 @@ ls ./nupkg/
 # MotorDsl.Extensions.<ver>.nupkg
 # MotorDsl.Printing.Abstractions.<ver>.nupkg
 # MotorDsl.Bluetooth.<ver>.nupkg
+# MotorDsl.Network.<ver>.nupkg
 # MotorDsl.Maui.<ver>.nupkg
+# MotorDsl.Pax.<ver>.nupkg
 ```
 
 ### 6.2 Publicación en NuGet.org (automática vía CI/CD)
@@ -260,7 +279,7 @@ git push origin v1.0.0
 
 ### 6.4 Versiones preview (push a `main`)
 
-En un push a `main`, el workflow calcula la versión `0.0.0-preview.<run_number>` y sube los `.nupkg` como artifacts, pero **no los publica** al feed (el step de publish exige tag `v*` o `workflow_dispatch`). Útil para pruebas internas.
+En un push a `main`, el workflow calcula la versión `0.0.0-preview.<run_number>`, verifica que estén los 9 `.nupkg` y los sube como artifacts, pero **no los publica** al feed (el step de publish exige tag `v*` o `workflow_dispatch`). Útil para pruebas internas.
 
 ### 6.5 Publicación manual desde la máquina local
 
@@ -474,3 +493,4 @@ Consumir:
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v1.0 | 2026-04-02 | Arquitectura / DevOps | Guía inicial de publicación y consumo NuGet |
+| v1.0 | 2026-11-18 | Agente (Feature 04, PAX A910S) | Noveno paquete `MotorDsl.Pax`: conteos de 8 a 9, fila en §3.2 y §5.2, nueva §3.4 (el paquete público sale sin binding, `-p:PaxNeptune=false`), `Network` y `Pax` en la prueba manual de §6.1 |

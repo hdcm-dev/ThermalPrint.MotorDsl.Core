@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 #
-# Calcula la version unificada de los 8 paquetes y crea el tag que dispara la publicacion.
+# Calcula la version unificada de los 9 paquetes y crea el tag que dispara la publicacion.
 #
 # POR QUE ESTE SCRIPT Y NO UN PORT DE publish-motordsl-nuget.bat:
-#   El .bat publica los 8 paquetes porque corre en Windows, donde existe el workload `ios`.
+#   El .bat publica los 9 paquetes porque corre en Windows, donde existe el workload `ios`.
 #   En Linux ese workload NO EXISTE ("Workload ID ios isn't supported on this platform"), y
 #   `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM. Un port a .sh solo
-#   podria empaquetar 6 de 8: quedarian afuera MotorDsl.Bluetooth y MotorDsl.Maui.
+#   podria empaquetar 7 de 9: quedarian afuera MotorDsl.Bluetooth y MotorDsl.Maui.
 #
 #   La publicacion completa la hace `.github/workflows/cd-nuget.yml`, que reparte el pack
-#   entre el runner Linux (6 paquetes net10.0) y un runner macOS (los 2 multi-TFM). Lo unico
-#   que ese workflow no hace es elegir el numero de version: lo toma del tag.
+#   entre el runner Linux (6 paquetes net10.0) y un runner macOS (los 2 multi-TFM y
+#   MotorDsl.Pax, net10.0-android). Lo unico que ese workflow no hace es elegir el numero de
+#   version: lo toma del tag.
+#
+#   MotorDsl.Pax se publica SIN el binding NeptuneLite (-p:PaxNeptune=false): el SDK PAX no
+#   se redistribuye, y en el equipo el modo Real responde `Connection`. Ver
+#   docs/09_devops/guia-publicacion-nuget_v1.0.md.
 #
 #   Este script cubre exactamente ese hueco. No necesita el SDK de .NET: solo consulta
 #   nuget.org por HTTPS y crea un tag de git. Corre en cualquier Linux, dentro o fuera del
@@ -32,6 +37,7 @@ PAQUETES=(
     MotorDsl.Network
     MotorDsl.Bluetooth
     MotorDsl.Maui
+    MotorDsl.Pax
 )
 
 DRY_RUN=0
@@ -39,7 +45,7 @@ VERSION_FORZADA=""
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=1 ;;
-        -h|--help) sed -n '2,25p' "$0" | sed 's/^# \?//'; exit 0 ;;
+        -h|--help) sed -n '2,28p' "$0" | sed 's/^# \?//'; exit 0 ;;
         *) VERSION_FORZADA="$arg" ;;
     esac
 done
@@ -51,7 +57,7 @@ command -v git     >/dev/null || { echo "ERROR: falta git" >&2; exit 1; }
 # --- Version unificada -------------------------------------------------------------------
 # Mismo criterio que get-next-version.ps1 + publish-motordsl-nuget.bat: por cada paquete se
 # toma la ultima estable X.Y.Z publicada y se incrementa el patch; la version unificada es el
-# MAXIMO de esos candidatos. Los 8 se publican con ese numero para evitar NU1605 (downgrade de
+# MAXIMO de esos candidatos. Los 9 se publican con ese numero para evitar NU1605 (downgrade de
 # dependencia) en apps que mezclen varios.
 #
 # Un paquete que nunca se publico da 404 y cae al fallback 1.0.0. Como 1.0.0 es el menor, no
@@ -90,7 +96,7 @@ fi
 TAG="v${VERSION}"
 echo
 echo "Version unificada: $VERSION   ->   tag $TAG"
-echo "Los 8 paquetes se publicaran con esa version."
+echo "Los 9 paquetes se publicaran con esa version."
 echo
 
 # --- Verificaciones ----------------------------------------------------------------------
@@ -124,5 +130,5 @@ git push origin "$TAG"
 
 echo
 echo "Tag $TAG pusheado."
-echo "Dispara cd-nuget.yml, que empaqueta los 8 y los publica en nuget.org:"
+echo "Dispara cd-nuget.yml, que empaqueta los 9 y los publica en nuget.org:"
 echo "  https://github.com/hdcm-dev/ThermalPrint.MotorDsl.Core/actions"

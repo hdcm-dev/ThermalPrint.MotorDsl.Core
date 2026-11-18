@@ -8,7 +8,7 @@ Los cambios entran por pull request con commit de merge (nunca `squash` ni `reba
 
 | Campo | Valor | Origen |
 |---|---|---|
-| Estado | Merge delegado al agente | Asentado el 2026-11-17 en la Feature 04 (PAX A910S), PR #15 |
+| Estado | Merge delegado al agente | Asentado el 2026-11-17 en la Feature 04 (PAX A910S), PR #13 |
 | Fecha | 2026-10-25 | Regla del PO para todos los PR del espacio de trabajo; reiterada el 2026-11-17 |
 | Decidió | Fernando Filipuzzi, Product Owner | 2026-10-25: «siempre para conformar los pr sigue `IA/IA.Knowledge.Base/Knowledges/Knowledge-Conformacion-Pull-Request-Automatico.md`»; 2026-11-17: «conforma los prs usando este conocimiento … arregla los conflictos … si, segui» |
 | Responsable | El agente que conduce la unidad: abre el PR, corre la guarda, fusiona y borra la rama | Conocimiento §2 (actor A) |

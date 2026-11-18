@@ -305,7 +305,7 @@ y en
 
 ## 📤 Publicación NuGet
 
-Los 8 paquetes se publican unificados con la misma versión vía:
+Los 9 paquetes se publican unificados con la misma versión vía (`MotorDsl.Pax` sale sin el binding NeptuneLite, `-p:PaxNeptune=false`):
 
 ```bash
 scripts/nuget/publish-motordsl-nuget.bat

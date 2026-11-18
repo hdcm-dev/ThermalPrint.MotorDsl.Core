@@ -6,6 +6,16 @@ echo ===================================================
 echo.
 
 :: -------------------------------------------------------
+:: Paquetes: los 9 de la libreria. MotorDsl.Pax es net10.0-android: la maquina que corre
+:: este script necesita la workload android (dotnet workload install android), ademas de
+:: la ios para Bluetooth y Maui. Pax se compila y empaqueta SIN el binding NeptuneLite
+:: (-p:PaxNeptune=false): el SDK PAX no se redistribuye, asi que el paquete publico no trae
+:: el jar ni las .so y en el equipo el modo Real responde Connection. Mismo criterio que
+:: .github/workflows/cd-nuget.yml; ver docs/09_devops/guia-publicacion-nuget_v1.0.md.
+:: -------------------------------------------------------
+set PAX_PROPS=-p:PaxNeptune=false
+
+:: -------------------------------------------------------
 :: [0/7] Resolver API Key (env var o prompt interactivo)
 :: -------------------------------------------------------
 if "%MOTORDSL_NUGET_API_KEY%"=="" (
@@ -37,6 +47,7 @@ for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%
 for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0get-next-version.ps1" -PackageName "MotorDsl.Bluetooth"') do set BLUETOOTH_NEXT=%%i
 for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0get-next-version.ps1" -PackageName "MotorDsl.Maui"') do set MAUI_NEXT=%%i
 for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0get-next-version.ps1" -PackageName "MotorDsl.Network"') do set NETWORK_NEXT=%%i
+for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0get-next-version.ps1" -PackageName "MotorDsl.Pax"') do set PAX_NEXT=%%i
 
 if "%CORE_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Core. & exit /b 1 )
 if "%PARSER_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Parser. & exit /b 1 )
@@ -46,13 +57,14 @@ if "%PRINTING_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.P
 if "%BLUETOOTH_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Bluetooth. & exit /b 1 )
 if "%MAUI_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Maui. & exit /b 1 )
 if "%NETWORK_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Network. & exit /b 1 )
+if "%PAX_NEXT%"=="" ( echo ERROR: No se pudo calcular version de MotorDsl.Pax. & exit /b 1 )
 
-:: Version unificada = max de los 8 paquetes, para mantenerlos alineados.
-:: MotorDsl.Network todavia no existe en nuget.org: get-next-version.ps1 devuelve el fallback
-:: 1.0.0, que al ser el menor no altera el max y hace que el paquete nuevo salga directamente
-:: con la version unificada vigente.
+:: Version unificada = max de los 9 paquetes, para mantenerlos alineados.
+:: Un paquete que todavia no existe en nuget.org (hoy MotorDsl.Pax) hace que get-next-version.ps1
+:: devuelva el fallback 1.0.0, que al ser el menor no altera el max y hace que el paquete nuevo
+:: salga directamente con la version unificada vigente.
 set MOTORDSL_VERSION=%CORE_NEXT%
-for %%V in (%PARSER_NEXT% %RENDERING_NEXT% %EXTENSIONS_NEXT% %PRINTING_NEXT% %BLUETOOTH_NEXT% %MAUI_NEXT% %NETWORK_NEXT%) do (
+for %%V in (%PARSER_NEXT% %RENDERING_NEXT% %EXTENSIONS_NEXT% %PRINTING_NEXT% %BLUETOOTH_NEXT% %MAUI_NEXT% %NETWORK_NEXT% %PAX_NEXT%) do (
     for /f "delims=" %%M in ('powershell -NoProfile -Command "if ([version]'%%V' -gt [version]'!MOTORDSL_VERSION!') { '%%V' } else { '!MOTORDSL_VERSION!' }"') do set MOTORDSL_VERSION=%%M
 )
 
@@ -68,9 +80,9 @@ echo    API Key:           [oculta]
 echo    Version unificada: !MOTORDSL_VERSION!
 echo      ^(Core next=%CORE_NEXT%, Parser next=%PARSER_NEXT%, Rendering next=%RENDERING_NEXT%, Extensions next=%EXTENSIONS_NEXT%^)
 echo      ^(Printing.Abstractions next=%PRINTING_NEXT%, Bluetooth next=%BLUETOOTH_NEXT%, Maui next=%MAUI_NEXT%^)
-echo      ^(Network next=%NETWORK_NEXT%^)
+echo      ^(Network next=%NETWORK_NEXT%, Pax next=%PAX_NEXT%^)
 echo.
-echo    Los 8 paquetes se publicaran con la misma version para evitar NU1605.
+echo    Los 9 paquetes se publicaran con la misma version para evitar NU1605.
 echo.
 
 set SRC_DIR=%~dp0..\..\src
@@ -79,11 +91,11 @@ set NUPKG_DIR=%~dp0..\..\nupkg
 if not exist "%NUPKG_DIR%" mkdir "%NUPKG_DIR%"
 
 :: -------------------------------------------------------
-:: [1/7] Restore de las 8 librerias
+:: [1/7] Restore de las 9 librerias
 :: -------------------------------------------------------
-echo [1/7] Restore de las 8 librerias ...
-for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui) do (
-    dotnet restore "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" --nologo
+echo [1/7] Restore de las 9 librerias ...
+for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
+    dotnet restore "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" --nologo %PAX_PROPS%
     if !errorlevel! neq 0 (
         echo ERROR: Fallo restore de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -92,11 +104,11 @@ for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluet
 echo.
 
 :: -------------------------------------------------------
-:: [2/7] Build Release de las 8 librerias
+:: [2/7] Build Release de las 9 librerias
 :: -------------------------------------------------------
-echo [2/7] Build Release de las 8 librerias ...
-for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui) do (
-    dotnet build "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-restore --nologo /p:Version=%MOTORDSL_VERSION% /p:MotorDslVersion=%MOTORDSL_VERSION%
+echo [2/7] Build Release de las 9 librerias ...
+for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
+    dotnet build "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-restore --nologo /p:Version=%MOTORDSL_VERSION% /p:MotorDslVersion=%MOTORDSL_VERSION% %PAX_PROPS%
     if !errorlevel! neq 0 (
         echo ERROR: Fallo build de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -117,11 +129,11 @@ if %errorlevel% neq 0 (
 echo.
 
 :: -------------------------------------------------------
-:: [4/7] Pack de las 8 librerias
+:: [4/7] Pack de las 9 librerias
 :: -------------------------------------------------------
-echo [4/7] Empaquetando las 8 librerias ...
-for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui) do (
-    dotnet pack "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-build --nologo -p:PackageVersion=%MOTORDSL_VERSION% -p:MotorDslVersion=%MOTORDSL_VERSION% -p:PackageReleaseNotes="Release %MOTORDSL_VERSION%" -o "%NUPKG_DIR%"
+echo [4/7] Empaquetando las 9 librerias ...
+for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
+    dotnet pack "%SRC_DIR%\MotorDsl.%%P\MotorDsl.%%P.csproj" -c Release --no-build --nologo -p:PackageVersion=%MOTORDSL_VERSION% -p:MotorDslVersion=%MOTORDSL_VERSION% -p:PackageReleaseNotes="Release %MOTORDSL_VERSION%" %PAX_PROPS% -o "%NUPKG_DIR%"
     if !errorlevel! neq 0 (
         echo ERROR: Fallo pack de MotorDsl.%%P. Abortando.
         exit /b 1
@@ -134,12 +146,12 @@ dir /b "%NUPKG_DIR%\MotorDsl.*.%MOTORDSL_VERSION%.nupkg"
 echo.
 
 :: -------------------------------------------------------
-:: [5/7] Push a nuget.org (orden: Printing.Abstractions -> Core/Parser/Rendering/Extensions -> Network -> Bluetooth/Maui)
+:: [5/7] Push a nuget.org (orden: Printing.Abstractions -> Core/Parser/Rendering/Extensions -> Network -> Bluetooth/Maui -> Pax)
 :: Nota: con --skip-duplicate, un 409 (duplicado) devuelve errorlevel 0.
 :: Por lo tanto cualquier errorlevel != 0 es una falla real (403 auth, red, etc).
 :: -------------------------------------------------------
 echo [5/7] Publicando en nuget.org ...
-for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui) do (
+for %%P in (Printing.Abstractions Core Parser Rendering Extensions Network Bluetooth Maui Pax) do (
     set NUPKG=%NUPKG_DIR%\MotorDsl.%%P.%MOTORDSL_VERSION%.nupkg
     if not exist "!NUPKG!" (
         echo ERROR: No se encontro !NUPKG!
@@ -211,6 +223,7 @@ echo    MotorDsl.Extensions             %MOTORDSL_VERSION%
 echo    MotorDsl.Bluetooth              %MOTORDSL_VERSION%
 echo    MotorDsl.Network                %MOTORDSL_VERSION%
 echo    MotorDsl.Maui                   %MOTORDSL_VERSION%
+echo    MotorDsl.Pax                    %MOTORDSL_VERSION%  ^(sin binding NeptuneLite^)
 echo.
 echo  La indexacion en nuget.org puede demorar varios minutos.
 echo ===================================================
