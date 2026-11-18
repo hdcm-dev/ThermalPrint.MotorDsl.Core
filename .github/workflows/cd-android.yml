@@ -13,8 +13,10 @@ env:
 
 jobs:
   build-android:
-    # runs-on: ubuntu-latest
-    runs-on: [self-hosted, ci-hdcm]
+    # Runner de GitHub (repositorio público, sin costo). Java, .NET y la workload maui-android se
+    # instalan en el propio job; el Android SDK viene en la imagen ubuntu-latest. No usa nada propio
+    # del runner self-hosted.
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         app:

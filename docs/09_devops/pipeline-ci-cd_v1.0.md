@@ -126,7 +126,7 @@ El conjunto real de librerías publicables son **9 paquetes**:
 * MotorDsl.Maui
 * MotorDsl.Pax (`net10.0-android`, sin el binding NeptuneLite (`-p:PaxNeptune=false`; ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §3.4))
 
-> El workflow `cd-nuget.yml` publica los **9** paquetes repartiendo el `pack` en dos runners: los 6 `net10.0` en el self-hosted y `MotorDsl.Bluetooth` / `MotorDsl.Maui` / `MotorDsl.Pax` en `macos-15`. La separación es estructural: `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM y el workload `ios` no existe para Linux. Antes publicaba solo las 4 librerías core y el resto dependía del script local `scripts/nuget/publish-motordsl-nuget.bat`.
+> El workflow `cd-nuget.yml` publica los **9** paquetes repartiendo el `pack` en dos runners: los 6 `net10.0` en `ubuntu-latest` y `MotorDsl.Bluetooth` / `MotorDsl.Maui` / `MotorDsl.Pax` en `macos-15`. La separación es estructural: `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM y el workload `ios` no existe para Linux. Antes publicaba solo las 4 librerías core y el resto dependía del script local `scripts/nuget/publish-motordsl-nuget.bat`.
 
 **Criterio de éxito**
 
