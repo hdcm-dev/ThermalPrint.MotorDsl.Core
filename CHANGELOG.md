@@ -54,6 +54,21 @@ que el número de versión **no** vive en los `.csproj`.
   del self-hosted, cuya cola compartida demoraba la CI de un PR hasta 1 h 36 min. Los workflows
   de iOS y `pack-platform` siguen en `macos-15`.
 
+### Corregido
+
+- **Texto partido en el PNG de `raster-preview`** (el que recibe la impresora del PAX A910S):
+  `RasterPreviewRenderer` dibujaba en un solo renglón el `WrappedText` que el `LayoutEngine` parte
+  con `'\n'`. El salto salía como un recuadro (glifo faltante), el resto del texto se cortaba a
+  384 px y el alto del bitmap reservaba una sola línea. Ahora dibuja cada línea en su renglón,
+  calcula el alto con la cantidad de líneas y alinea (centrado/derecha) cada una con su propio
+  ancho. En el acta integrada del sample, el PNG pasa de 384 × 1221 a 384 × 1501 px y aparecen
+  completas las líneas que antes se perdían. `escpos-bitmap` (Bluetooth) y `text` no tenían el
+  defecto: el `'\n'` llega a la impresora como LF y `TextRenderer` ya partía por línea.
+- **Tests**: `RasterPreviewMultilineTests` (alto por cantidad de líneas, primer renglón sin el
+  salto, alineación por línea, acta integrada a 384 px y LF en `escpos-bitmap`). `MotorDsl.Tests`
+  enlaza por fuente los renderers SkiaSharp de `MotorDsl.Maui` con su fuente embebida y suma
+  `SkiaSharp` (con los nativos de Linux) y `QRCoder`.
+
 ### Seguridad
 
 - **Datos de infraestructura fuera de la punta pública**: el `backendBaseUrl` de los cinco

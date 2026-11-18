@@ -77,7 +77,9 @@ public class RasterPreviewRenderer : IRenderer
                 }
                 else if (!string.IsNullOrEmpty(info.WrappedText))
                 {
-                    totalHeight += lineHeight;
+                    // El LayoutEngine une con '\n' las líneas de un texto partido: se reserva
+                    // una línea por cada una, no una sola para todo el bloque.
+                    totalHeight += lineHeight * SplitLines(info.WrappedText).Length;
                 }
             }
             totalHeight += padding;
@@ -124,19 +126,21 @@ public class RasterPreviewRenderer : IRenderer
                 else if (!string.IsNullOrEmpty(info.WrappedText))
                 {
                     bool bold = info.DeviceMetadata.TryGetValue("bold", out var bv) && bv is true;
-                    if (bold)
+                    using var boldTf = bold
+                        ? SKTypeface.FromFamilyName(typeface?.FamilyName ?? "monospace", SKFontStyle.Bold)
+                        : null;
+                    using var boldFont = bold ? new SKFont(boldTf ?? typeface, fontSize) : null;
+                    var lineFont = boldFont ?? font;
+
+                    // Una llamada a DrawText por línea: SkiaSharp no interpreta '\n' (lo dibuja
+                    // como glifo faltante y sigue en la misma línea). La alineación se calcula
+                    // por línea, con el ancho de cada una.
+                    foreach (var line in SplitLines(info.WrappedText))
                     {
-                        using var boldTf = SKTypeface.FromFamilyName(
-                            typeface?.FamilyName ?? "monospace",
-                            SKFontStyle.Bold);
-                        using var boldFont = new SKFont(boldTf ?? typeface, fontSize);
-                        DrawText(canvas, info.WrappedText, info.Alignment, canvasWidth, y, boldFont, paint);
+                        if (line.Length > 0)
+                            DrawText(canvas, line, info.Alignment, canvasWidth, y, lineFont, paint);
+                        y += lineHeight;
                     }
-                    else
-                    {
-                        DrawText(canvas, info.WrappedText, info.Alignment, canvasWidth, y, font, paint);
-                    }
-                    y += lineHeight;
                 }
             }
 
@@ -199,6 +203,13 @@ public class RasterPreviewRenderer : IRenderer
         "right" => Math.Max(0, canvasWidth - contentWidth - 8),
         _ => 8
     };
+
+    /// <summary>
+    /// Parte el <c>WrappedText</c> del layout en sus líneas (el motor las une con <c>'\n'</c>;
+    /// se acepta también <c>"\r\n"</c>). Las líneas vacías se conservan: ocupan su alto.
+    /// </summary>
+    internal static string[] SplitLines(string text) =>
+        text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
 
     private static void DrawText(SKCanvas canvas, string text, string? alignment, int canvasWidth, int y, SKFont font, SKPaint paint)
     {
