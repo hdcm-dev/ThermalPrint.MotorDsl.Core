@@ -114,7 +114,7 @@ v1.2.0
 
 **Objetivo:** compilar las librerías del motor.
 
-El conjunto real de librerías publicables son **8 paquetes**:
+El conjunto real de librerías publicables son **9 paquetes**:
 
 * MotorDsl.Core
 * MotorDsl.Parser
@@ -124,8 +124,9 @@ El conjunto real de librerías publicables son **8 paquetes**:
 * MotorDsl.Network
 * MotorDsl.Bluetooth
 * MotorDsl.Maui
+* MotorDsl.Pax (`net10.0-android`, sin el binding NeptuneLite (`-p:PaxNeptune=false`; ver [guia-publicacion-nuget_v1.0.md](guia-publicacion-nuget_v1.0.md) §3.4))
 
-> El workflow `cd-nuget.yml` publica los **8** paquetes repartiendo el `pack` en dos runners: los 6 `net10.0` en el self-hosted y `MotorDsl.Bluetooth` / `MotorDsl.Maui` en `macos-15`. La separación es estructural: `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM y el workload `ios` no existe para Linux. Antes publicaba solo las 4 librerías core y el resto dependía del script local `scripts/nuget/publish-motordsl-nuget.bat`.
+> El workflow `cd-nuget.yml` publica los **9** paquetes repartiendo el `pack` en dos runners: los 6 `net10.0` en el self-hosted y `MotorDsl.Bluetooth` / `MotorDsl.Maui` / `MotorDsl.Pax` en `macos-15`. La separación es estructural: `dotnet pack` de un proyecto multi-TFM exige compilar todos sus TFM y el workload `ios` no existe para Linux. Antes publicaba solo las 4 librerías core y el resto dependía del script local `scripts/nuget/publish-motordsl-nuget.bat`.
 
 **Criterio de éxito**
 
@@ -352,7 +353,7 @@ publish:
 Implementado en v1.0 (actualización):
 
 - ✅ Publicación automática en NuGet.org (cd-nuget.yml con NUGET_API_KEY)
-- ✅ Conjunto de 8 paquetes: MotorDsl.Core, Parser, Rendering, Extensions, Printing.Abstractions, Network, Bluetooth, Maui (publicados por `cd-nuget.yml` o por `publish-motordsl-nuget.bat`, con versión unificada)
+- ✅ Conjunto de 9 paquetes: MotorDsl.Core, Parser, Rendering, Extensions, Printing.Abstractions, Network, Bluetooth, Maui, Pax (publicados por `cd-nuget.yml` o por `publish-motordsl-nuget.bat`, con versión unificada)
 - ✅ Soporte iOS: cd-ios-sampleapp.yml, cd-ios-multaapp.yml y cd-ios-multaapp.nuget.yml
 - ✅ Samples de integración NuGet: MotorDsl.Nuget.MultaApp y MotorDsl.Nuget.Integrated.MultaApp
 
@@ -375,5 +376,6 @@ Planeado para v2.x:
 | ------- | ---------- | ------ | --------------------------------------- |
 | v1.0    | 2026-03-29 | DevOps | Pipeline inicial para publicación NuGet |
 | v1.1    | 2026-04-02 | DevOps | Publicación real en NuGet.org (NUGET_API_KEY), cd-ios-multaapp.yml, samples MotorDsl.Nuget.MultaApp / MotorDsl.Nuget.Integrated.MultaApp |
+| v1.2    | 2026-11-18 | Agente (Feature 04) | Noveno paquete `MotorDsl.Pax` en `pack-platform`, sin binding NeptuneLite |
 
 ---

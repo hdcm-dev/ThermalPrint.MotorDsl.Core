@@ -21,6 +21,12 @@ que el número de versión **no** vive en los `.csproj`.
   en ese caso el modo Real responde `Connection` («Avisá a soporte»).
 - **`cd-nuget.yml`**: `MotorDsl.Pax` se empaqueta en `pack-platform` (macos-15), el control de
   conteo pasa de 8 a 9 y se publica al final del orden de push.
+- **Scripts de publicación con el noveno paquete**: `tag-next-version.sh`,
+  `publish-motordsl-nuget.bat` y `build-motordsl-nuget.bat` suman `MotorDsl.Pax` a sus listas
+  (consulta de versión, restore, build, pack, push y resumen). El `.bat` de publicación fuerza
+  `-p:PaxNeptune=false`, igual que `cd-nuget.yml`: **el paquete público sale sin binding** y
+  la máquina que lo corre necesita la workload `android`. `docs/09_devops` pasa de 8 a 9
+  paquetes y suma la §3.4 de la guía de publicación.
 
 - **`scripts/local-devcontainer/`**: versión Linux de `scripts/local/`. Compila los cinco
   samples a APK dentro de un **contenedor Docker efímero** (.NET 10 + workload `maui-android` +
